@@ -11,6 +11,7 @@ declare class ChatClient {
     private agentUrl;
     constructor(options: ConfigOptions);
     requestChatQueue(readableStream: any, question: string): void;
+    requestSign(): Promise<unknown>;
     requestChat(question: string): Promise<unknown>;
 }
 export default ChatClient;

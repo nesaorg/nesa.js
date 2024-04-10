@@ -29,10 +29,7 @@ class EncryptUtils {
     if (!this.privateKey || !this.publicKey) {
       return "";
     }
-    console.log("this.privateKey1: ", this.privateKey);
-    console.log("this.publicKey1: ", this.publicKey);
     const str = `${data}|${chatSeq}`;
-    console.log("str: ", str);
     const signDataHash = CryptoJS.SHA256(str).toString(CryptoJS.enc.Hex);
     console.log("signDataHash: ", signDataHash);
     const digest = Secp256k1.uint256(signDataHash, 16);

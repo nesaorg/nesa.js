@@ -139,47 +139,43 @@ class ChatClient {
     }
   }
 
-  async requestChat(question: string) {
-    console.log("this.isRegisterSessioning: ", this.isRegisterSessioning);
-    console.log("this.agentUrl: ", this.agentUrl);
-    console.log("this.chatQueue: ", this.chatQueue);
-    console.log("this: ", this);
+  async requestSign() {
     return new Promise(async (resolve, reject) => {
       // todo add modelId
       // if (!this.modelId) {
       //   reject(new Error("ModelId is null"));
       // } else
-      console.log("this2: ", this);
-      console.log("11this.isRegisterSessioning: ", this.isRegisterSessioning);
       if (this.isRegisterSessioning) {
         reject(new Error("Registering session, please wait"));
-      } else if (!this.agentUrl) {
-        this.isRegisterSessioning = true;
+      } else {
         await EncryptUtils.generateKey();
         const { sessionId, vrf } = await EncryptUtils.generateVrf();
         WalletOperation.registerSession(sessionId, vrf)
           .then((result: any) => {
-            console.log("result: ", result);
             if (result?.transactionHash) {
-              console.log("this3: ", this);
               this.agentUrl = "ws://47.238.190.19:8035/pingws";
               this.isRegisterSessioning = false;
-              const readableStream = new Readable({ objectMode: true });
-              readableStream._read = () => {};
-              resolve(readableStream);
-              if (this.isChatinging) {
-                this.chatQueue.push({ readableStream, question });
-              } else {
-                this.requestChatQueue(readableStream, question);
-              }
+              resolve(result);
             } else {
+              this.isRegisterSessioning = false;
               reject(result);
             }
           })
           .catch((error) => {
-            console.log("errorerror: ", error);
+            console.log("error: ", error);
+            this.isRegisterSessioning = false;
             reject(error);
           });
+      }
+    });
+  }
+
+  async requestChat(question: string) {
+    return new Promise(async (resolve, reject) => {
+      if (this.isRegisterSessioning) {
+        reject(new Error("Registering session, please wait"));
+      } else if (!this.agentUrl) {
+        reject(new Error("Please initiate registration operation first"));
       } else {
         const readableStream = new Readable({ objectMode: true });
         readableStream._read = () => {};
