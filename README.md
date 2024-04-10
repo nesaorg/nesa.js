@@ -1,15 +1,23 @@
 # SDK API Interface Document
 
-### Install
+### Install & Usage
+
 ```
-  npm install @idena/vrf-js @lionello/secp256k1-js
+  npm install
+  npm run build
+  npm link
+```
+
+```
+  // in your project
+  npm link nesa-sdk
 ```
 
 ### Init SDK
 
  ```
- import ChatSDK from "/nesaSdk/chatSDK";
- const ChatUtils = new ChatSDK({modelId: ""});
+ import { ChatClient } from 'nesa-sdk';
+ const ChatUtils = new ChatClient({modelId:""})
  ```
 
 #### `requestChat`: Start Conversation Interface
@@ -27,14 +35,27 @@
 | 403  | Chat ended normally                              |
 | 404  | `websocket` connection error                     |
 
-## Calling Example
+## Please note:
 
+1. If there is an error related to VRF, publicKey or other related words during the call process, please try calling again. This is an occasional issue and we are working to resolve it.
+
+2. Setting up the Keplr wallet plugin:
+```
+Path: Settings -> Advanced -> Modify connection point
+Choose: Cosmos Hub Testnet, set 
+RPC: http://47.238.190.19:11007
+LCD: http://47.238.190.19:9032
+
+Test account: (mnemonic) 
+will win clip toss grab swamp drastic flower point control silent multiply coffee flush increase endless dance walk liberty long enhance collect mango drill
+```
 ### Example
 
 ```
-import ChatSDK from "/nesaSdk/chatSDK";
+import { ChatClient } from 'nesa-sdk';
 
-const ChatUtils = new ChatSDK({modelId: "modelId"})
+const ChatUtils = new ChatClient({modelId:""})
+
 ChatUtils.requestChat(question)
   .then(readableStream => {
     readableStream.on("data",(data) => {
