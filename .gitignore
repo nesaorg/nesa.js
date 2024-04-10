@@ -1,0 +1,10 @@
+.idea/*
+.vscode
+.nyc_output
+node_modules
+coverage
+*.log
+proto/
+
+# MacOS
+.DS_Store
