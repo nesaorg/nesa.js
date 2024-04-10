@@ -6,8 +6,7 @@
   "types": "build/index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc -p tsconfig.json",
-    "postinstall": "patch-package"
+    "build": "tsc -p tsconfig.json"
   },
   "author": "",
   "license": "ISC",
