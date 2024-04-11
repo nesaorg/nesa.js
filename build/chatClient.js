@@ -154,7 +154,7 @@ class ChatClient {
                     console.log("result: ", result);
                     if (result?.transactionHash) {
                         console.log("this3: ", this);
-                        this.agentUrl = "ws://47.238.190.19:8035/pingws";
+                        this.agentUrl = "ws://34.28.50.124:31331/pingws";
                         this.isRegisterSessioning = false;
                         const readableStream = new stream_browserify_1.Readable({ objectMode: true });
                         readableStream._read = () => { };
