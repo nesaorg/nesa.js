@@ -83,6 +83,7 @@ class ChatClient {
             readableStream.push({
               code: 200,
               message: event?.data,
+              total_payment
             });
             const data = JSON.stringify({
               chat_seq: this.chatSeq,
@@ -139,7 +140,7 @@ class ChatClient {
     }
   }
 
-  async requestSign() {
+  async requestSession() {
     return new Promise(async (resolve, reject) => {
       // todo add modelId
       // if (!this.modelId) {
