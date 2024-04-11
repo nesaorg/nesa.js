@@ -154,7 +154,7 @@ class ChatClient {
         WalletOperation.registerSession(sessionId, vrf)
           .then((result: any) => {
             if (result?.transactionHash) {
-              this.agentUrl = "ws://47.238.190.19:8035/pingws";
+              this.agentUrl = "ws://34.28.50.124:31331/pingws";
               this.isRegisterSessioning = false;
               resolve(result);
             } else {
