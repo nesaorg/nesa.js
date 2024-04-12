@@ -137,7 +137,7 @@ class ChatClient {
         WalletOperation.registerSession(sessionId, vrf)
           .then((result: any) => {
             if (result?.transactionHash) {
-              this.agentUrl = "ws://34.28.50.124:31331/pingws";
+              this.agentUrl = "wss://nesa-agent.tpblock.io/pingws";
               this.isRegisterSessioning = false;
               resolve(result);
             } else {

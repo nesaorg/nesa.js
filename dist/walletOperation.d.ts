@@ -2,6 +2,7 @@ declare class WalletOperation {
     static getTestnetChainInfo: () => {
         chainId: string;
         chainName: string;
+        coinMinimalDenom: string;
         rpc: string;
         rest: string;
         bip44: {
@@ -15,17 +16,12 @@ declare class WalletOperation {
             bech32PrefixConsAddr: string;
             bech32PrefixConsPub: string;
         };
-        currencies: ({
+        currencies: {
             coinDenom: string;
             coinMinimalDenom: string;
             coinDecimals: number;
             coinGeckoId: string;
-        } | {
-            coinDenom: string;
-            coinMinimalDenom: string;
-            coinDecimals: number;
-            coinGeckoId?: undefined;
-        })[];
+        }[];
         feeCurrencies: {
             coinDenom: string;
             coinMinimalDenom: string;
@@ -45,7 +41,7 @@ declare class WalletOperation {
         };
         features: string[];
     };
-    static registerSession(sessionId: string, vrf: any): Promise<Error | import("./client").RegisterInferenceAgentResult>;
+    static registerSession(sessionId: string, vrf: any): Promise<import("./client").RegisterInferenceAgentResult | Error>;
     static registerModel(modelName: string, modelVersion: string): Promise<Error>;
 }
 export default WalletOperation;

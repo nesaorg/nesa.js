@@ -7,8 +7,9 @@ class WalletOperation {
   static getTestnetChainInfo = () => ({
     chainId: "theta-testnet-001",
     chainName: "theta-testnet-001",
-    rpc: "http://47.238.190.19:11007",
-    rest: "http://47.238.190.19:9032",
+    coinMinimalDenom: "uatom",
+    rpc: "https://cosmos-rpc.tpblock.io",
+    rest: "https://cosmos-rest.tpblock.io",
     bip44: {
       coinType: 118,
     },
@@ -26,26 +27,6 @@ class WalletOperation {
         coinMinimalDenom: "uatom",
         coinDecimals: 6,
         coinGeckoId: "cosmos",
-      },
-      {
-        coinDenom: "THETA",
-        coinMinimalDenom: "theta",
-        coinDecimals: 0,
-      },
-      {
-        coinDenom: "LAMBDA",
-        coinMinimalDenom: "lambda",
-        coinDecimals: 0,
-      },
-      {
-        coinDenom: "RHO",
-        coinMinimalDenom: "rho",
-        coinDecimals: 0,
-      },
-      {
-        coinDenom: "EPSILON",
-        coinMinimalDenom: "epsilon",
-        coinDecimals: 0,
       },
     ],
     feeCurrencies: [
@@ -83,7 +64,9 @@ class WalletOperation {
         offlineSigner,
         account.address,
         {
-          gasPrice: GasPrice.fromString("0.025uatom"),
+          gasPrice: GasPrice.fromString(
+            `0.025${this.getTestnetChainInfo().coinMinimalDenom}`
+          ),
           estimatedBlockTime: 6,
           estimatedIndexerTime: 5,
         }
@@ -91,7 +74,7 @@ class WalletOperation {
       // const result = await nesaClient.registerModel(modelName, modelVersion);
       const modelId = long.fromString("13");
       const lockBalance = {
-        denom: "uatom",
+        denom: this.getTestnetChainInfo().coinMinimalDenom,
         amount: "10",
       };
       return nesaClient.registerSession(sessionId, modelId, lockBalance, vrf);
@@ -112,7 +95,9 @@ class WalletOperation {
         offlineSigner,
         account.address,
         {
-          gasPrice: GasPrice.fromString("0.025uatom"),
+          gasPrice: GasPrice.fromString(
+            `0.025${this.getTestnetChainInfo().coinMinimalDenom}`
+          ),
           estimatedBlockTime: 6,
           estimatedIndexerTime: 5,
         }
