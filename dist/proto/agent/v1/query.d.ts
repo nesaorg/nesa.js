@@ -890,7 +890,7 @@ export declare const QuerySessionResponse: {
             } & {
                 denom?: string | undefined;
                 amount?: string | undefined;
-            } & { [K_2 in Exclude<keyof I["session"]["lockBalance"], keyof import("../../cosmos/base/v1beta1/coin").Coin>]: never; }) | undefined;
+            } & { [K in Exclude<keyof I["session"]["lockBalance"], keyof import("../../cosmos/base/v1beta1/coin").Coin>]: never; }) | undefined;
             expirationAt?: Date | undefined;
             payment?: ({
                 chatSeq?: string | number | Long.Long | undefined;
@@ -957,18 +957,18 @@ export declare const QuerySessionResponse: {
                     toString: (radix?: number | undefined) => string;
                     toUnsigned: () => Long.Long;
                     xor: (other: string | number | Long.Long) => Long.Long;
-                } & { [K_3 in Exclude<keyof I["session"]["payment"]["chatSeq"], keyof Long.Long>]: never; }) | undefined;
+                } & { [K_1 in Exclude<keyof I["session"]["payment"]["chatSeq"], keyof Long.Long>]: never; }) | undefined;
                 totalPayment?: ({
                     denom?: string | undefined;
                     amount?: string | undefined;
                 } & {
                     denom?: string | undefined;
                     amount?: string | undefined;
-                } & { [K_4 in Exclude<keyof I["session"]["payment"]["totalPayment"], keyof import("../../cosmos/base/v1beta1/coin").Coin>]: never; }) | undefined;
+                } & { [K_2 in Exclude<keyof I["session"]["payment"]["totalPayment"], keyof import("../../cosmos/base/v1beta1/coin").Coin>]: never; }) | undefined;
                 merkleRoot?: Uint8Array | undefined;
-            } & { [K_5 in Exclude<keyof I["session"]["payment"], keyof import("./genesis").Payment>]: never; }) | undefined;
-        } & { [K_6 in Exclude<keyof I["session"], keyof Session>]: never; }) | undefined;
-    } & { [K_7 in Exclude<keyof I, "session">]: never; }>(object: I): QuerySessionResponse;
+            } & { [K_3 in Exclude<keyof I["session"]["payment"], keyof import("./genesis").Payment>]: never; }) | undefined;
+        } & { [K_4 in Exclude<keyof I["session"], keyof Session>]: never; }) | undefined;
+    } & { [K_5 in Exclude<keyof I, "session">]: never; }>(object: I): QuerySessionResponse;
 };
 export interface Query {
     Params(request: QueryParamsRequest): Promise<QueryParamsResponse>;

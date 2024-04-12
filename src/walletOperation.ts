@@ -71,15 +71,11 @@ class WalletOperation {
   });
 
   static async registerSession(sessionId: string, vrf: any) {
-    // @ts-ignore
-    if (window && window.keplr) {
-      // @ts-ignore
+    if (window?.keplr) {
       const { keplr } = window;
       const { chainId, rpc } = this.getTestnetChainInfo();
       await keplr.experimentalSuggestChain(this.getTestnetChainInfo());
       await keplr.enable(this.getTestnetChainInfo().chainId);
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
       const offlineSigner = window.getOfflineSigner!(chainId);
       const account: AccountData = (await offlineSigner.getAccounts())[0];
       const nesaClient = await NesaClient.connectWithSigner(
@@ -104,14 +100,11 @@ class WalletOperation {
   }
 
   static async registerModel(modelName: string, modelVersion: string) {
-    // @ts-ignore
     if (window && window.keplr) {
-      // @ts-ignore
       const { keplr } = window;
       const { chainId, rpc } = this.getTestnetChainInfo();
       await keplr.experimentalSuggestChain(this.getTestnetChainInfo());
       await keplr.enable(this.getTestnetChainInfo().chainId);
-      // @ts-ignore
       const offlineSigner = window.getOfflineSigner!(chainId);
       const account: AccountData = (await offlineSigner.getAccounts())[0];
       const nesaClient = await NesaClient.connectWithSigner(

@@ -22,126 +22,110 @@ class ChatClient {
     this.isChatinging = true;
     this.chatSeq += 1;
     let isFirstChat = true;
-    try {
-      // @ts-ignore
-      const ws = new WebSocket(this.agentUrl);
-      ws.addEventListener("open", async () => {
-        if (ws.readyState === 1) {
-          const signData = await EncryptUtils.signQuestion(
-            question,
-            this.chatSeq
+    const ws = new WebSocket(this.agentUrl);
+    ws.addEventListener("open", () => {
+      if (ws.readyState === 1) {
+        const signData = EncryptUtils.signQuestion(question, this.chatSeq);
+        if (signData) {
+          ws.send(
+            JSON.stringify({
+              chat_seq: this.chatSeq,
+              qn: question,
+              signature_question: signData,
+            })
           );
-          if (signData) {
-            ws.send(
-              JSON.stringify({
-                chat_seq: this.chatSeq,
-                qn: question,
-                signature_question: signData,
-              })
-            );
-          } else {
-            readableStream.push({
-              code: 401,
-              message:
-                "No signature found or the signature has expired, please sign again",
-            });
-            this.isChatinging = false;
-            readableStream.push(null);
-          }
+        } else {
+          readableStream.push({
+            code: 401,
+            message:
+              "No signature found or the signature has expired, please sign again",
+          });
+          this.isChatinging = false;
+          readableStream.push(null);
         }
-      });
-      ws.onmessage = async (event: any) => {
-        console.log("onmessage: ", event);
-        if (isFirstChat) {
-          if (event?.data !== "ack") {
-            ws.close();
-            readableStream.push({
-              code: 402,
-              message: "Illegal link",
-            });
-            this.isChatinging = false;
-          } else {
-            isFirstChat = false;
-          }
-        } else if (event?.data === "[DONE]") {
+      }
+    });
+    ws.onmessage = (event: any) => {
+      console.log("onmessage: ", event);
+      if (isFirstChat) {
+        if (event?.data !== "ack") {
           ws.close();
           readableStream.push({
-            code: 403,
-            message: event.data,
+            code: 402,
+            message: "Illegal link",
           });
           this.isChatinging = false;
         } else {
-          const total_payment = {
-            amount: this.totalPayment,
-            denom: "uatom",
-          };
-          const signaturePayment = await EncryptUtils.signPayment(
-            this.chatSeq,
-            total_payment
-          );
-          if (signaturePayment) {
-            readableStream.push({
-              code: 200,
-              message: event?.data,
-              total_payment
-            });
-            const data = JSON.stringify({
-              chat_seq: this.chatSeq,
-              total_payment,
-              signature_payment: signaturePayment,
-            });
-            this.totalPayment += 1;
-            ws.send(data);
-          } else {
-            readableStream.push({
-              code: 401,
-              message:
-                "No signature found or the signature has expired, please sign again",
-            });
-            ws.close();
-            readableStream.push(null);
-          }
+          isFirstChat = false;
         }
-      };
-      ws.onclose = () => {
-        readableStream.push(null);
-        this.isChatinging = false;
-        if (this.chatQueue.length > 0) {
-          const { readableStream: nextReadableStream, question: nextQuestion } =
-            this.chatQueue.shift();
-          this.requestChatQueue(nextReadableStream, nextQuestion);
-        }
-      };
-      ws.onopen = () => {
-        console.log("onopen");
-      };
-      ws.onerror = (err: any) => {
+      } else if (event?.data === "[DONE]") {
+        ws.close();
         readableStream.push({
-          code: 404,
-          message: JSON.stringify(err),
+          code: 403,
+          message: event.data,
         });
-        readableStream.push(null);
         this.isChatinging = false;
-        if (this.chatQueue.length > 0) {
-          const { readableStream: nextReadableStream, question: nextQuestion } =
-            this.chatQueue.shift();
-          this.requestChatQueue(nextReadableStream, nextQuestion);
+      } else {
+        const total_payment = {
+          amount: this.totalPayment,
+          denom: "NES",
+        };
+        const signaturePayment = EncryptUtils.signPayment(
+          this.chatSeq,
+          total_payment
+        );
+        if (signaturePayment) {
+          readableStream.push({
+            code: 200,
+            message: event?.data,
+            total_payment,
+          });
+          const data = JSON.stringify({
+            chat_seq: this.chatSeq,
+            total_payment,
+            signature_payment: signaturePayment,
+          });
+          this.totalPayment += 1;
+          ws.send(data);
+        } else {
+          readableStream.push({
+            code: 401,
+            message:
+              "No signature found or the signature has expired, please sign again",
+          });
+          ws.close();
+          readableStream.push(null);
         }
-      };
-    } catch (error) {
+      }
+    };
+    ws.onclose = (error: any) => {
+      console.log("onclose: ", error);
       readableStream.push(null);
-      readableStream.destroy(error);
       this.isChatinging = false;
       if (this.chatQueue.length > 0) {
         const { readableStream: nextReadableStream, question: nextQuestion } =
           this.chatQueue.shift();
         this.requestChatQueue(nextReadableStream, nextQuestion);
       }
-    }
+    };
+    ws.onerror = (error: any) => {
+      console.log("websocketOnerror: ", error);
+      readableStream.push({
+        code: 404,
+        message: "Error: Connection failed",
+      });
+      readableStream.push(null);
+      this.isChatinging = false;
+      if (this.chatQueue.length > 0) {
+        const { readableStream: nextReadableStream, question: nextQuestion } =
+          this.chatQueue.shift();
+        this.requestChatQueue(nextReadableStream, nextQuestion);
+      }
+    };
   }
 
-  async requestSession() {
-    return new Promise(async (resolve, reject) => {
+  requestSession() {
+    return new Promise((resolve, reject) => {
       // todo add modelId
       // if (!this.modelId) {
       //   reject(new Error("ModelId is null"));
@@ -149,8 +133,7 @@ class ChatClient {
       if (this.isRegisterSessioning) {
         reject(new Error("Registering session, please wait"));
       } else {
-        await EncryptUtils.generateKey();
-        const { sessionId, vrf } = await EncryptUtils.generateVrf();
+        const { sessionId, vrf } = EncryptUtils.generateVrf();
         WalletOperation.registerSession(sessionId, vrf)
           .then((result: any) => {
             if (result?.transactionHash) {
@@ -163,7 +146,7 @@ class ChatClient {
             }
           })
           .catch((error) => {
-            console.log("error: ", error);
+            console.log("registerSessionError: ", error);
             this.isRegisterSessioning = false;
             reject(error);
           });
@@ -171,8 +154,8 @@ class ChatClient {
     });
   }
 
-  async requestChat(question: string) {
-    return new Promise(async (resolve, reject) => {
+  requestChat(question: string) {
+    return new Promise((resolve, reject) => {
       if (this.isRegisterSessioning) {
         reject(new Error("Registering session, please wait"));
       } else if (!this.agentUrl) {

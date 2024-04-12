@@ -9,12 +9,14 @@ class EncryptUtils {
 
   public static publicKey: any;
 
-  static async generateKey() {
+  public static privateKeyBuf: any;
+
+  static generateKey() {
     if (this.privateKey && this.publicKey) {
       return { privateKey: this.privateKey, publicKey: this.publicKey };
     }
-    //@ts-ignore
     const privateKeyBuf = window.crypto.getRandomValues(new Uint8Array(32));
+    this.privateKeyBuf = privateKeyBuf;
     const privateKey = Secp256k1.uint256(privateKeyBuf, 16);
     const publicKey = Secp256k1.generatePublicKeyFromPrivateKeyData(privateKey);
     this.privateKey = privateKey;
@@ -25,13 +27,12 @@ class EncryptUtils {
     };
   }
 
-  static async signQuestion(data: string, chatSeq: number) {
+  static signQuestion(data: string, chatSeq: number) {
     if (!this.privateKey || !this.publicKey) {
       return "";
     }
     const str = `${data}|${chatSeq}`;
     const signDataHash = CryptoJS.SHA256(str).toString(CryptoJS.enc.Hex);
-    console.log("signDataHash: ", signDataHash);
     const digest = Secp256k1.uint256(signDataHash, 16);
     const signature = Secp256k1.ecsign(this.privateKey, digest);
     let sigV =
@@ -43,7 +44,7 @@ class EncryptUtils {
     return signatureData;
   }
 
-  static async signPayment(chatSeq: number, totalPayment: any) {
+  static signPayment(chatSeq: number, totalPayment: any) {
     if (!this.privateKey || !this.publicKey) {
       return "";
     }
@@ -64,34 +65,17 @@ class EncryptUtils {
     return Evaluate(sk, data);
   }
 
-  static compressPublicKey(hexX: any, hexY: any) {
-    const reformHexX = hexX.length < 64 ? `0${hexX}` : hexX;
-    // eslint-disable-next-line no-undef
-    const x = BigInt(`0x${reformHexX}`);
-    // eslint-disable-next-line no-undef
-    const y = BigInt(`0x${hexY}`);
-    let compressedPublicKey = "";
-    if (y % 2n === 0n) {
-      compressedPublicKey = "02" + x.toString(16);
-    } else {
-      compressedPublicKey = "03" + x.toString(16);
-    }
-    return compressedPublicKey;
-  }
-
   static generateVrf() {
-    const compressedPublicKey = this.compressPublicKey(
-      this.publicKey.x,
-      this.publicKey.y
-    );
+    this.generateKey();
+    const publicKeyY = BigInt(`0x${this.publicKey.y}`);
+    let compressedPublicKey = "";
+    if (publicKeyY % 2n === 0n) {
+      compressedPublicKey = "02" + this.publicKey.x;
+    } else {
+      compressedPublicKey = "03" + this.publicKey.x;
+    }
     const seed = [1, 2, 3, 4, 5];
-    const privateKey = this.privateKey.toString("hex");
-    const uint8Array = new Uint8Array(
-      privateKey.match(/[\da-f]{2}/gi).map(function (h: any) {
-        return parseInt(h, 16);
-      })
-    );
-    const [hash, proof] = this.generateProof(uint8Array, seed);
+    const [hash, proof] = this.generateProof(this.privateKeyBuf, seed);
     return {
       vrf: {
         seed,

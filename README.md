@@ -20,7 +20,7 @@ import { ChatClient } from 'nesa-sdk';
 const ChatUtils = new ChatClient({modelId:""})
 ```
 
-#### `requestSign`: First initiate a signature
+#### `requestSession`: First initiate a signature
 
 #### `requestChat`: Start Conversation Interface
 
@@ -38,9 +38,7 @@ const ChatUtils = new ChatClient({modelId:""})
 
 ## Please note:
 
-1. If there is an error related to VRF, publicKey or other related words during the call process, please try calling again. This is an occasional issue and we are working to resolve it.
-
-2. Setting up the Keplr wallet plugin:
+1. Setting up the Keplr wallet plugin:
 
 ```
 Path: Settings -> Advanced -> Modify connection point
@@ -57,22 +55,12 @@ import { ChatClient } from 'nesa-sdk';
 
 const ChatUtils = new ChatClient({modelId:""})
 
-ChatUtils.requestSign()
+// This method can be called once
+ChatUtils.requestSession()
   .then(result => {
     if (result?.transactionHash) {
       // Signature success
-      ChatUtils.requestChat(question)
-        .then(readableStream => {
-          readableStream.on("data",(data) => {
-              // Processing transmission data
-          })
-          readableStream.on("end",() => {
-              // End of transmission
-          })
-        })
-        .catch(error => {
-          // Error handling
-        });
+      // After successfully detecting the signature, call the requestChat method
     }else{
       // Signature failed
     }
@@ -81,4 +69,17 @@ ChatUtils.requestSign()
     // Error handling
   });
 
+// Please call ChatUtils.requestSession before calling and successfully get the callback
+ChatUtils.requestChat(question)
+  .then(readableStream => {
+    readableStream.on("data",(data) => {
+        // Processing transmission data
+    })
+    readableStream.on("end",() => {
+        // End of transmission
+    })
+  })
+  .catch(error => {
+    // Error handling
+  });
 ```
