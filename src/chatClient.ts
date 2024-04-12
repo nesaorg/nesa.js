@@ -70,7 +70,7 @@ class ChatClient {
             message: event.data,
           });
           this.isChatinging = false;
-        } else if (event?.data !== "ack") {
+        } else {
           const total_payment = {
             amount: this.totalPayment,
             denom: "uatom",
