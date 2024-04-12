@@ -1,0 +1,14 @@
+diff --git a/node_modules/@lionello/secp256k1-js/src/secp256k1.js b/node_modules/@lionello/secp256k1-js/src/secp256k1.js
+index 5194675..c43a95d 100644
+--- a/node_modules/@lionello/secp256k1-js/src/secp256k1.js
++++ b/node_modules/@lionello/secp256k1-js/src/secp256k1.js
+@@ -1,7 +1,7 @@
+ (function () {
+     if (typeof module !== 'undefined') {
+-        BN = module.require('bn.js')
+-        randomBytes = module.require('crypto').randomBytes
++        window.BN = module.require('bn.js')
++        window.randomBytes = module.require('crypto').randomBytes
+     } else {
+         // bn.js must have been included by the main html file
+         randomBytes = length => window.crypto.getRandomValues(new Uint8Array(length))

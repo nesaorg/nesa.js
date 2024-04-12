@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "description": "",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json",
+    "postinstall": "patch-package"
   },
   "author": "",
   "license": "ISC",
@@ -15,7 +17,9 @@
     "@cosmjs/tendermint-rpc": "^0.32.3",
     "@idena/vrf-js": "^1.0.1",
     "@lionello/secp256k1-js": "^1.1.0",
+    "bn.js": "^4.11.8",
     "crypto-js": "^4.2.0",
+    "patch-package": "^8.0.0",
     "stream-browserify": "^3.0.0"
   },
   "devDependencies": {

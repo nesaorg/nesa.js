@@ -5,7 +5,7 @@
     "lib": ["es2020", "dom"],
     "moduleResolution": "node",
     "incremental": true,
-    "tsBuildInfoFile": "build/.tsbuildinfo",
+    "tsBuildInfoFile": "dist/.tsbuildinfo",
     "inlineSourceMap": true,
     "declaration": true,
     "outDir": "dist",
@@ -17,7 +17,7 @@
     "noUnusedParameters": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "pretty": true,
+    "pretty": true
   },
   "include": ["src/**/*.ts"]
 }

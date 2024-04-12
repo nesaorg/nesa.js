@@ -41,7 +41,7 @@ declare class WalletOperation {
         };
         features: string[];
     };
-    static registerSession(sessionId: string, vrf: any): Promise<import("./client").RegisterInferenceAgentResult | Error>;
+    static registerSession(sessionId: string, vrf: any): Promise<Error | import("./client").RegisterInferenceAgentResult>;
     static registerModel(modelName: string, modelVersion: string): Promise<Error>;
 }
 export default WalletOperation;
