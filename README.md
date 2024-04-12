@@ -1,4 +1,6 @@
-# SDK API Interface Document
+# NESA SDK
+
+The SDK is designed to be integrated into frontend projects, allowing seamless integration with the Keplr wallet extension. It enables users to perform signing and messaging functionalities within the frontend project.
 
 ### Install & Usage
 
@@ -36,15 +38,15 @@ const ChatUtils = new ChatClient({modelId:""})
 | 403  | Chat ended normally                              |
 | 404  | `websocket` connection error                     |
 
-## Please note:
+### Please note:
 
 1. Setting up the Keplr wallet plugin:
 
 ```
 Path: Settings -> Advanced -> Modify connection point
 Choose: Cosmos Hub Testnet, set
-RPC: http://47.238.190.19:11007
-LCD: http://47.238.190.19:9032
+RPC: https://cosmos-rpc.tpblock.io
+LCD: https://cosmos-rest.tpblock.io
 
 ```
 
