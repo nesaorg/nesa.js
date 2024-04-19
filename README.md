@@ -43,8 +43,8 @@ const ChatUtils = new ChatClient({modelName: ""})
 ```
 Path: Settings -> Advanced -> Modify connection point
 Choose: Cosmos Hub Testnet, set
-RPC: https://cosmos-rpc.tpblock.io
-LCD: https://cosmos-rest.tpblock.io
+RPC: http://156.249.28.51:11007
+LCD: http://156.249.28.51:9032
 
 ```
 
