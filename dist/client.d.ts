@@ -3,11 +3,11 @@ import { OfflineSigner } from "@cosmjs/proto-signing";
 import { SigningStargateClient, SigningStargateClientOptions, GasPrice, Event, QueryClient } from "@cosmjs/stargate";
 import { CometClient } from "@cosmjs/tendermint-rpc";
 import { Logger } from './logger';
-import { VRF } from './proto/agent/v1/tx';
-import { Payment } from "./proto/agent/v1/genesis";
-import { Coin } from "./proto/cosmos/base/v1beta1/coin";
+import { VRF } from './codec/agent/v1/tx';
+import { Payment, Params, SessionStatus } from "./codec/agent/v1/agent";
+import { Coin } from "./codec/cosmos/base/v1beta1/coin";
 import { AgentExtension } from './queries';
-import { QueryModelAllResponse, QueryModelResponse, QueryParamsResponse, QueryInferenceAgentResponse, QuerySessionResponse } from "./proto/agent/v1/query";
+import { QueryModelAllResponse, QueryModelResponse, QueryParamsResponse, QueryInferenceAgentResponse, QuerySessionResponse, QuerySessionByAgentResponse, QueryVRFSeedResponse } from "./codec/agent/v1/query";
 export type NesaClientOptions = SigningStargateClientOptions & {
     logger?: Logger;
     gasPrice: GasPrice;
@@ -21,14 +21,8 @@ export interface MsgResult {
     /** block height where this transaction was committed - only set if we send 'block' mode */
     readonly height: number;
 }
-export type RegisterModelResult = MsgResult & {
-    readonly modelId: number;
-};
-export type RegisterInferenceAgentResult = MsgResult & {
-    readonly agentId: number;
-};
 export type RegisterSessionResult = MsgResult & {
-    readonly agentId: number;
+    readonly account: string;
 };
 export declare class NesaClient {
     readonly gasPrice: GasPrice;
@@ -42,13 +36,18 @@ export declare class NesaClient {
     readonly estimatedIndexerTime: number;
     static connectWithSigner(endpoint: string, signer: OfflineSigner, senderAddress: string, options: NesaClientOptions): Promise<NesaClient>;
     private constructor();
-    registerModel(name: string, version: string): Promise<RegisterModelResult>;
-    registerInferenceAgent(modelId: Long, url: string): Promise<RegisterInferenceAgentResult>;
-    registerSession(sessionId: string, modelId: Long, lockBalance?: Coin, vrf?: VRF): Promise<RegisterInferenceAgentResult>;
+    updateParams(authority: string, params: Params): Promise<MsgResult>;
+    registerModel(name: string, repositoryUrl: string): Promise<MsgResult>;
+    registerInferenceAgent(url: string, version: Long, lockBalance?: Coin): Promise<MsgResult>;
+    registerSession(sessionId: string, modelName: string, lockBalance?: Coin, vrf?: VRF): Promise<RegisterSessionResult>;
     submitPayment(sessionId: string, signature: Uint8Array, payment?: Payment): Promise<MsgResult>;
-    getModel(modelId: Long): Promise<QueryModelResponse>;
+    claimSession(sessionId: string): Promise<MsgResult>;
+    cancelSession(sessionId: string): Promise<MsgResult>;
+    getModel(name: string): Promise<QueryModelResponse>;
     getAllModel(key: Uint8Array, offset: Long, limit: Long, countTotal: boolean, reverse: boolean): Promise<QueryModelAllResponse>;
     getParams(): Promise<QueryParamsResponse>;
-    getInferenceAgent(agentId: Long): Promise<QueryInferenceAgentResponse>;
+    getInferenceAgent(account: string): Promise<QueryInferenceAgentResponse>;
     getSession(sessionId: string): Promise<QuerySessionResponse>;
+    getSessionByAgent(account: string, status: SessionStatus, limit: Long, orderDesc: boolean, expireTime?: Date): Promise<QuerySessionByAgentResponse>;
+    getVRFSeed(account: string): Promise<QueryVRFSeedResponse>;
 }

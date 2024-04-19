@@ -1,4 +1,5 @@
 import ChatClient from "./chatClient";
+import WalletOperation from './walletOperation';
 declare class NesaSdk {
     modelId: string;
     constructor(modelId: string);
@@ -6,5 +7,5 @@ declare class NesaSdk {
         modelId: string;
     };
 }
-export { ChatClient };
+export { ChatClient, WalletOperation };
 export default NesaSdk;

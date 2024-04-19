@@ -1,17 +1,29 @@
+import { ChainInfo } from "@keplr-wallet/types";
 interface ConfigOptions {
-    modelId: string;
+    modelName: string;
+    chainInfo?: ChainInfo;
+    lockAmount?: string;
+}
+interface questionTypes {
+    messages: any;
+    stream?: boolean;
 }
 declare class ChatClient {
-    modelId: string;
+    modelName: string;
+    chainInfo: ChainInfo;
+    lockAmount: string;
     private chatQueue;
     private chatSeq;
     private totalPayment;
     private isChatinging;
     private isRegisterSessioning;
+    private heartbeatConnecting;
     private agentUrl;
     constructor(options: ConfigOptions);
-    requestChatQueue(readableStream: any, question: string): void;
+    version(): string;
+    checkChainInfo(): string | false;
+    requestChatQueue(readableStream: any, question: questionTypes): void;
     requestSession(): Promise<unknown>;
-    requestChat(question: string): Promise<unknown>;
+    requestChat(question: questionTypes): Promise<unknown>;
 }
 export default ChatClient;

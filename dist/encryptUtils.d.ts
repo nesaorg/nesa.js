@@ -6,16 +6,9 @@ declare class EncryptUtils {
         privateKey: any;
         publicKey: any;
     };
-    static signQuestion(data: string, chatSeq: number): string;
-    static signPayment(chatSeq: number, totalPayment: any): string;
-    static generateProof(sk: any, data: any): any;
-    static generateVrf(): {
-        vrf: {
-            seed: number[];
-            proof: any;
-            hashRandom: any;
-        };
-        sessionId: string;
-    };
+    static sortObjectKeys(obj: Record<string, any>): Record<string, any>;
+    static signMessage(message: string, chatSeq: number, isQuestion?: boolean): string;
+    static requestVrf(): Promise<any>;
+    static signHeartbeat(message: string): string;
 }
 export default EncryptUtils;

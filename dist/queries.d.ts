@@ -1,13 +1,16 @@
 /// <reference types="long" />
 import { QueryClient } from "@cosmjs/stargate";
-import { QueryModelAllResponse, QueryModelResponse, QueryParamsResponse, QueryInferenceAgentResponse, QuerySessionResponse } from "./proto/agent/v1/query";
+import { QueryModelAllResponse, QueryModelResponse, QueryParamsResponse, QueryInferenceAgentResponse, QuerySessionResponse, QueryVRFSeedResponse, QuerySessionByAgentResponse } from "./codec/agent/v1/query";
+import { SessionStatus } from './codec/agent/v1/agent';
 export interface AgentExtension {
     readonly agent: {
-        readonly modelRequest: (modelId: Long) => Promise<QueryModelResponse>;
+        readonly modelRequest: (name: string) => Promise<QueryModelResponse>;
         readonly modelRequestAll: (key: Uint8Array, offset: Long, limit: Long, countTotal: boolean, reverse: boolean) => Promise<QueryModelAllResponse>;
         readonly params: () => Promise<QueryParamsResponse>;
-        readonly inferenceAgentRequest: (id: Long) => Promise<QueryInferenceAgentResponse>;
+        readonly inferenceAgentRequest: (account: string) => Promise<QueryInferenceAgentResponse>;
         readonly sessionRequest: (id: string) => Promise<QuerySessionResponse>;
+        readonly sessionByAgentRequest: (account: string, status: SessionStatus, limit: Long, orderDesc: boolean, expireTime?: Date) => Promise<QuerySessionByAgentResponse>;
+        readonly VRFSeedRequest: (account: string) => Promise<QueryVRFSeedResponse>;
     };
 }
 export declare function setupAgentExtension(base: QueryClient): AgentExtension;

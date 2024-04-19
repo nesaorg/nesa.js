@@ -19,24 +19,22 @@ npm link nesa-sdk
 
 ```
 import { ChatClient } from 'nesa-sdk';
-const ChatUtils = new ChatClient({modelId:""})
+const ChatUtils = new ChatClient({modelName: ""})
 ```
 
 #### `requestSession`: First initiate a signature
 
 #### `requestChat`: Start Conversation Interface
 
-| params   | message  |
-| -------- | -------- |
-| question | question |
-
-| Code | Message                                          |
+| Return Code | Message                                          |
 | ---- | ------------------------------------------------ |
 | 200  | Normal response                                  |
-| 401  | No signature found or the signature has expired. |
-| 402  | Illegal link                                     |
-| 403  | Chat ended normally                              |
-| 404  | `websocket` connection error                     |
+| 201  | No signature found or the signature has expired. |
+| 202  | Illegal link                                     |
+| 203  | Current Chat contributions                              |
+| 204  | `websocket` connection error                     |
+| 204  | `websocket` connection close reason                     |
+
 
 ### Please note:
 
@@ -55,7 +53,11 @@ LCD: https://cosmos-rest.tpblock.io
 ```
 import { ChatClient } from 'nesa-sdk';
 
-const ChatUtils = new ChatClient({modelId:""})
+const ChatUtils = new ChatClient({
+    modelName: "meta-llama/Llama-2-13b-hf",  // At this stage, "meta-llama/Llama-2-13b-hf" must be filled in
+    chainInfo: ChainInfo // optional, The current chain information is the rpc address : "http://156.249.28.51:11007",
+    lockAmount: lockAmount // optional, default is 1000
+  })
 
 // This method can be called once
 ChatUtils.requestSession()
@@ -72,7 +74,14 @@ ChatUtils.requestSession()
   });
 
 // Please call ChatUtils.requestSession before calling and successfully get the callback
-ChatUtils.requestChat(question)
+ChatUtils.requestChat({
+  "messages": [
+    {'role': 'user', 'content': QUESTION}
+    // ...you can add history messages
+  ],
+  // you can add other hyperparameter,like:
+  "frequency_penalty": 0.5,
+})
   .then(readableStream => {
     readableStream.on("data",(data) => {
         // Processing transmission data
