@@ -24,6 +24,6 @@ declare class ChatClient {
     checkChainInfo(): string | false;
     requestChatQueue(readableStream: any, question: questionTypes): void;
     requestSession(): Promise<unknown>;
-    requestChat(question: questionTypes): Promise<unknown>;
+    requestChat(question: any): Promise<unknown>;
 }
 export default ChatClient;
