@@ -149,16 +149,10 @@ class ChatClient {
       };
       ws.onclose = (error: any) => {
         console.log('onclose: ', error)
-        let errorMessage = ''
-        try {
-          errorMessage = JSON.parse(error?.reason)?.msg;
-        } catch (err) {
-          errorMessage = error?.reason;
-        }
-        if (errorMessage) {
+        if (error?.reason) {
           readableStream.push({
             code: 205,
-            message: errorMessage,
+            message: error?.reason,
           });
           readableStream.push(null);
         }
