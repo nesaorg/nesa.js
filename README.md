@@ -30,7 +30,7 @@ This is a promise that will call back a **readableStream** object. You can get t
 
 ```
   {
-    code: "200",  // code 
+    code: 200,  // code
     message: "hello", //  message
     total_payment: {  //  total_payment , If code is 200 it will return
       amount: 10, //  total_payment amount
@@ -41,36 +41,14 @@ This is a promise that will call back a **readableStream** object. You can get t
 
 Return Code and message
 
-| Return Code | Message                                          |
-| ----------- | ------------------------------------------------ |
-| 200         | Normal response                                  |
-| 201         | No signature found or the signature has expired. |
-| 202         | Illegal link                                     |
-| 203         | Current Chat contributions                       |
-| 204         | `websocket` connection error message             |
-| 205         | `websocket` connection close reason , See below  |
-
-### Return Code 205 Business Error Codes
-
-| Error Code | Error Message              |
-| ---------- | -------------------------- |
-| 0          | Operation successful       |
-| 1001       | Websocket upgrade failed   |
-| 1002       | Init connection failed     |
-| 1003       | Read message failed        |
-| 1004       | Invalid param              |
-| 1005       | Denom mismatch             |
-| 1006       | Duplicate query            |
-| 1007       | Recover public key failed  |
-| 1008       | Verify session info failed |
-| 1009       | Save session info failed   |
-| 1010       | Write message failed       |
-| 1011       | Invalid payment            |
-| 1012       | Session already exists     |
-| 1013       | Write chat message failed  |
-| 1014       | Invalid channel            |
-| 1015       | Balance insufficient       |
-| 1016       | Internal db error          |
+| Code | Message                                          |
+| ---- | ------------------------------------------------ |
+| 200  | Normal response                                  |
+| 201  | No signature found or the signature has expired. |
+| 202  | Illegal link                                     |
+| 203  | Current chat contributions                       |
+| 204  | `websocket` connection error message             |
+| 205  | Business error information returned              |
 
 ### Please note:
 
@@ -138,7 +116,7 @@ ChatUtils.requestChat({
         //  202 : Illegal agent websocket link
         //  203 : Current query contributions
         //  204 : Websocket connection abnormality error message
-        //  205 : Websocket business error information returned ,Please see the **205 Business Error Codes** table above
+        //  205 : Websocket business error information returned
     })
     readableStream.on("end",() => {
         // End of transmission
