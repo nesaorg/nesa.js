@@ -268,7 +268,7 @@ class ChatClient {
     });
   }
 
-  requestChat(question: questionTypes) {
+  requestChat(question: any) {
     console.log('this.isRegisterSessioning: ', this.isRegisterSessioning)
     return new Promise((resolve, reject) => {
       if (this.isRegisterSessioning) {
