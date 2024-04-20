@@ -26,6 +26,21 @@ const ChatUtils = new ChatClient({modelName: ""})
 
 #### `requestChat`: Start Conversation Interface
 
+This is a promise that will call back a **readableStream** object. You can get the conversation information through **readableStream.on('data')**, which will return an object:
+
+```
+  {
+    code: "200",  // code 
+    message: "hello", //  message
+    total_payment: {  //  total_payment , If code is 200 it will return
+      amount: 10, //  total_payment amount
+      denom: 'unes' //  denom
+    }
+  }
+```
+
+Return Code and message
+
 | Return Code | Message                                          |
 | ----------- | ------------------------------------------------ |
 | 200         | Normal response                                  |
@@ -35,7 +50,7 @@ const ChatUtils = new ChatClient({modelName: ""})
 | 204         | `websocket` connection error message             |
 | 205         | `websocket` connection close reason , See below  |
 
-### 205 Business Error Codes
+### Return Code 205 Business Error Codes
 
 | Error Code | Error Message              |
 | ---------- | -------------------------- |
@@ -86,7 +101,7 @@ ChatUtils.requestSession()
     if (result?.transactionHash) {
       // Signature success
       // After successfully detecting the signature, call the requestChat method
-    }else{
+    } else {
       // Signature failed
     }
   })
@@ -105,8 +120,19 @@ ChatUtils.requestChat({
 })
   .then(readableStream => {
     readableStream.on("data",(data) => {
-        // Processing transmission data
-        // Return different messages according to different code codes
+        //  Processing transmission data
+        const {code, message, total_payment} = data
+        if (code === 200) {
+          // Streaming data return for normal conversation
+          const nextChatResponse = message
+          const totalPayment = total_payment
+          ...
+        } else {
+          // Exception information prompt
+          const infoMessage = message
+          ...
+        }
+        //  For detailed code and message, please refer to the above API
         //  200 : Normal data return
         //  201 : No signature found or the signature has expired
         //  202 : Illegal agent websocket link
