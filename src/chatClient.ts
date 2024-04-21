@@ -154,8 +154,8 @@ class ChatClient {
             code: 205,
             message: error?.reason,
           });
-          readableStream.push(null);
         }
+        readableStream.push(null);
         this.isChatinging = false;
         if (this.chatQueue.length > 0) {
           const { readableStream: nextReadableStream, question: nextQuestion } =
