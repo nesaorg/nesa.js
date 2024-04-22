@@ -90,8 +90,16 @@ ChatUtils.requestSession()
 // Please call ChatUtils.requestSession before calling and successfully get the callback
 ChatUtils.requestChat({
   "messages": [
-    {'role': 'user', 'content': QUESTION}
     // ...you can add history messages
+    //  Please follow the following rules to set role:
+    //  Use "user" for user queries (unless you know that the model side uses a different name);
+    //  The content of the assistant's answer is always returned using "assistant".
+    //  For example:
+    {'role': 'user', 'content': 'user question 1'},
+    {'role': 'assistant', 'content': 'assistant answer 1'},
+    {'role': 'user', 'content': 'user question 2'},
+    {'role': 'assistant', 'content': 'assistant answer 2'},
+    ...
   ],
   // you can add other hyperparameter,like:
   "frequency_penalty": 0.5,

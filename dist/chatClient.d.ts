@@ -19,6 +19,7 @@ declare class ChatClient {
     private isRegisterSessioning;
     private heartbeatConnecting;
     private agentUrl;
+    private assistantRoleName;
     constructor(options: ConfigOptions);
     version(): string;
     checkChainInfo(): string | false;

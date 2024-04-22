@@ -27,6 +27,7 @@ class ChatClient {
   private isRegisterSessioning = false;
   private heartbeatConnecting: any;
   private agentUrl = "";
+  private assistantRoleName = ""
   constructor(options: ConfigOptions) {
     this.modelName = options.modelName;
     this.chainInfo = options.chainInfo || defaultChainInfo;
@@ -59,6 +60,15 @@ class ChatClient {
             ...question,
             model: this.modelName,
           });
+          if (question.messages && this.assistantRoleName) {
+            question.messages = question.messages.map((item: any) => {
+              if (item.role === 'assistant') {
+                item.role = this.assistantRoleName
+              }
+              return item
+            })
+          }
+          console.log('questionStr: ',questionStr)
           const signedMessage = EncryptUtils.signMessage(questionStr, this.chatSeq, true);
           if (signedMessage) {
             if (this.heartbeatConnecting) {
@@ -90,8 +100,17 @@ class ChatClient {
       });
       ws.onmessage = (event: any) => {
         console.log("onmessage: ", event);
+        let messageJson
+        try {
+          messageJson = JSON.parse(event?.data)
+          if (messageJson?.role) {
+            this.assistantRoleName = messageJson.role
+          }
+        } catch (error) {
+          messageJson = event?.data
+        }
         if (isFirstChat) {
-          if (event?.data !== "ack") {
+          if (messageJson !== "ack") {
             ws.close();
             readableStream.push({
               code: 202,
@@ -101,11 +120,11 @@ class ChatClient {
           } else {
             isFirstChat = false;
           }
-        } else if (event?.data.startsWith("[DONE]")) {
+        } else if (messageJson?.content?.startsWith("[DONE]")) {
           ws.close();
           readableStream.push({
             code: 203,
-            message: event?.data.split("[DONE]")[1],
+            message: messageJson?.content?.split("[DONE]")[1],
           });
           this.isChatinging = false;
         } else {
@@ -118,7 +137,7 @@ class ChatClient {
             if (this.heartbeatConnecting) {
               readableStream.push({
                 code: 200,
-                message: event?.data,
+                message: messageJson?.content,
                 total_payment,
               });
               const data = JSON.stringify({
