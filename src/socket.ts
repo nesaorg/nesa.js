@@ -14,7 +14,8 @@ interface ISocket {
     }) => (WebSocket | null | undefined),
     heartbeat: Function,
     send: (data: any, callback?: Function) => void
-    close: Function
+    close: Function,
+    signatureData: string
 }
 
 export const socket: ISocket = {
@@ -23,12 +24,10 @@ export const socket: ISocket = {
     socket_open: false,
     heartbeat_timer: undefined,
     heartbeat_interval: 5000,
+    signatureData: '',
 
     init(handle) {
         socket.ws_url = handle.ws_url;
-        console.log('socket: ', socket)
-        console.log('socket.web_socket: ', socket.web_socket)
-        console.log('socket.ws_url: ', socket.ws_url)
         socket.web_socket = new WebSocket(socket.ws_url);
         socket.web_socket.onopen = () => {
             socket.socket_open = true;
@@ -36,20 +35,15 @@ export const socket: ISocket = {
             handle?.onopen && handle.onopen()
         }
         socket.web_socket.onclose = (e) => {
-            console.log('connection closed (' + e.code + ')')
             clearInterval(socket.heartbeat_timer)
             socket.socket_open = false
             handle?.onclose && handle.onclose(e)
             setTimeout(() => {
                 socket.init(handle)
-            }, socket.heartbeat_interval);
+            }, 5000);
         }
         socket.web_socket.onerror = (e) => {
-            console.log('connection error (' + e + ')')
             handle?.onerror && handle.onerror(e)
-            setTimeout(() => {
-                socket.init(handle)
-            }, socket.heartbeat_interval);
         }
         return undefined;
     },
@@ -59,10 +53,19 @@ export const socket: ISocket = {
             clearInterval(socket.heartbeat_timer);
         }
         socket.heartbeat_timer = setInterval(() => {
-            const send_data = {
-                "message": "hello",
-                "signature_message": EncryptUtils.signHeartbeat("hello")
-            };
+            let send_data
+            if (this.signatureData) {
+                send_data = {
+                    "message": "hello",
+                    "signature_message": this.signatureData
+                }
+            } else {
+                this.signatureData = EncryptUtils.signHeartbeat("hello")
+                send_data = {
+                    "message": "hello",
+                    "signature_message": this.signatureData
+                }
+            }
             socket.send(send_data);
         }, socket.heartbeat_interval)
     },

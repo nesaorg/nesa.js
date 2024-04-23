@@ -14,6 +14,7 @@ interface ISocket {
     heartbeat: Function;
     send: (data: any, callback?: Function) => void;
     close: Function;
+    signatureData: string;
 }
 export declare const socket: ISocket;
 export {};

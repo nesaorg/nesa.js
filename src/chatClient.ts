@@ -3,7 +3,7 @@ import WalletOperation from "./walletOperation";
 import { Readable } from "stream-browserify";
 import { ChainInfo } from "@keplr-wallet/types"
 import { defaultChainInfo, defaultLockAmount, sdkVersion } from "./default.config";
-// import { socket } from "./socket";
+import { socket } from "./socket";
 
 interface ConfigOptions {
   modelName: string;
@@ -25,14 +25,12 @@ class ChatClient {
   private totalPayment = 1;
   private isChatinging = false;
   private isRegisterSessioning = false;
-  private heartbeatConnecting: any;
   private agentUrl = "";
   private assistantRoleName = ""
   constructor(options: ConfigOptions) {
     this.modelName = options.modelName;
     this.chainInfo = options.chainInfo || defaultChainInfo;
     this.lockAmount = options.lockAmount || defaultLockAmount;
-    this.heartbeatConnecting = true
   }
 
   version() {
@@ -68,25 +66,15 @@ class ChatClient {
               return item
             })
           }
-          console.log('questionStr: ',questionStr)
           const signedMessage = EncryptUtils.signMessage(questionStr, this.chatSeq, true);
           if (signedMessage) {
-            if (this.heartbeatConnecting) {
-              ws.send(
-                JSON.stringify({
-                  chat_seq: this.chatSeq,
-                  query: questionStr,
-                  signature_query: signedMessage,
-                })
-              );
-            } else {
-              readableStream.push({
-                code: 206,
-                message: "The connection has been disconnected, please sign again",
-              });
-              this.isChatinging = false;
-              readableStream.push(null);
-            }
+            ws.send(
+              JSON.stringify({
+                chat_seq: this.chatSeq,
+                query: questionStr,
+                signature_query: signedMessage,
+              })
+            );
           } else {
             readableStream.push({
               code: 201,
@@ -134,27 +122,18 @@ class ChatClient {
           };
           const signedMessage = EncryptUtils.signMessage(`${total_payment.amount}${total_payment.denom}`, this.chatSeq, false);
           if (signedMessage) {
-            if (this.heartbeatConnecting) {
-              readableStream.push({
-                code: 200,
-                message: messageJson?.content,
-                total_payment,
-              });
-              const data = JSON.stringify({
-                chat_seq: this.chatSeq,
-                total_payment,
-                signature_payment: signedMessage,
-              });
-              this.totalPayment += 1;
-              ws.send(data);
-            } else {
-              readableStream.push({
-                code: 206,
-                message: "The connection has been disconnected, please sign again",
-              });
-              this.isChatinging = false;
-              readableStream.push(null);
-            }
+            readableStream.push({
+              code: 200,
+              message: messageJson?.content,
+              total_payment,
+            });
+            const data = JSON.stringify({
+              chat_seq: this.chatSeq,
+              total_payment,
+              signature_payment: signedMessage,
+            });
+            this.totalPayment += 1;
+            ws.send(data);
           } else {
             readableStream.push({
               code: 201,
@@ -229,43 +208,24 @@ class ChatClient {
                 .then((agentInfo: any) => {
                   if (agentInfo?.inferenceAgent?.url) {
                     let agentWsUrl = ''
-                    // let agentHeartbeatUrl = ''
+                    let agentHeartbeatUrl = ''
                     if (agentInfo?.inferenceAgent?.url?.endsWith("/")) {
                       agentWsUrl = agentInfo?.inferenceAgent?.url + 'chat';
-                      // agentHeartbeatUrl = agentInfo?.inferenceAgent?.url + 'heartbeat';
+                      agentHeartbeatUrl = agentInfo?.inferenceAgent?.url + 'heartbeat';
                     } else {
                       agentWsUrl = agentInfo?.inferenceAgent?.url + '/chat';
-                      // agentHeartbeatUrl = agentInfo?.inferenceAgent?.url + '/heartbeat';
+                      agentHeartbeatUrl = agentInfo?.inferenceAgent?.url + '/heartbeat';
                     }
-                    this.agentUrl = agentWsUrl;
-                    this.isRegisterSessioning = false;
-                    this.heartbeatConnecting = true;
-                    resolve(result);
-                    // socket.init({
-                    //   ws_url: agentInfo?.inferenceAgent?.url + '/';,
-                    //   onopen: () => {
-                    //     console.log("heartbeat socket open");
-                    //     console.log('this.agentUrl: ', this.agentUrl)
-                    //     this.agentUrl = agentInfo?.inferenceAgent?.url;
-                    //     // this.agentUrl = "ws://192.168.131.64:17216/chat";
-                    //     this.isRegisterSessioning = false;
-                    //     this.heartbeatConnecting = true;
-                    //     resolve(result);
-                    //   },
-                    // onclose: (e) => {
-                    //   console.log("heartbeat socket onclose12345", e);
-                    //   this.heartbeatConnecting = false;
-                    //   reject(new Error("Heartbeat socket error"));
-                    // },
-                    // onerror: (e) => {
-                    //   console.log("heartbeat socket error23456", e);
-                    //   this.heartbeatConnecting = false;
-                    //   reject(new Error("Heartbeat socket error"));
-                    // },
-                    // });
+                    socket.init({
+                      ws_url: agentHeartbeatUrl,
+                      onopen: () => {
+                        this.agentUrl = agentWsUrl;
+                        this.isRegisterSessioning = false;
+                        resolve(result);
+                      },
+                    });
                   } else {
                     this.isRegisterSessioning = false;
-                    this.heartbeatConnecting = true;
                     reject("No agent found")
                   }
                 })

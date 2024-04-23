@@ -17,7 +17,6 @@ declare class ChatClient {
     private totalPayment;
     private isChatinging;
     private isRegisterSessioning;
-    private heartbeatConnecting;
     private agentUrl;
     private assistantRoleName;
     constructor(options: ConfigOptions);
