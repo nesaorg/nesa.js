@@ -4,11 +4,12 @@ import { Readable } from "stream-browserify";
 import { ChainInfo } from "@keplr-wallet/types"
 import { defaultChainInfo, defaultLockAmount, sdkVersion } from "./default.config";
 import { socket } from "./socket";
+import { BigNumber } from 'bignumber.js';
 
 interface ConfigOptions {
   modelName: string;
-  chainInfo?: ChainInfo;
   lockAmount?: string;
+  chainInfo?: ChainInfo;
 }
 
 interface questionTypes {
@@ -20,6 +21,7 @@ class ChatClient {
   public modelName: string;
   public chainInfo: ChainInfo;
   public lockAmount: string;
+  public lockAmountDenom: string;
   private chatQueue: any = [];
   private chatSeq = 0;
   private totalPayment = 1;
@@ -31,6 +33,7 @@ class ChatClient {
     this.modelName = options.modelName;
     this.chainInfo = options.chainInfo || defaultChainInfo;
     this.lockAmount = options.lockAmount || defaultLockAmount;
+    this.lockAmountDenom = ''
   }
 
   version() {
@@ -191,7 +194,6 @@ class ChatClient {
   }
 
   requestSession() {
-    console.log('requestSession: ', this.modelName)
     return new Promise((resolve, reject) => {
       if (!this.checkChainInfo()) {
         reject(new Error("Invalid chainInfo, you must provide rpc, rest, feeCurrencies, feeCurrencies"));
@@ -199,56 +201,76 @@ class ChatClient {
         reject(new Error("ModelName is null"));
       } else if (this.isRegisterSessioning) {
         reject(new Error("Registering session, please wait"));
+      } else if (!this.lockAmount || new BigNumber(this.lockAmount).isNaN()) {
+        reject(new Error("LockAmount invalid value"))
       } else {
-        WalletOperation.registerSession(this.modelName, this.lockAmount, this.chainInfo)
-          .then((result: any) => {
-            console.log('registerSession-result: ', result)
-            if (result?.transactionHash) {
-              WalletOperation.requestAgentInfo(result?.account, this.chainInfo)
-                .then((agentInfo: any) => {
-                  if (agentInfo?.inferenceAgent?.url) {
-                    let agentWsUrl = ''
-                    let agentHeartbeatUrl = ''
-                    if (agentInfo?.inferenceAgent?.url?.endsWith("/")) {
-                      agentWsUrl = agentInfo?.inferenceAgent?.url + 'chat';
-                      agentHeartbeatUrl = agentInfo?.inferenceAgent?.url + 'heartbeat';
+        WalletOperation.requestParams(this.chainInfo)
+          .then((params) => {
+            if (params && params?.params) {
+              if (new BigNumber(this.lockAmount).isLessThan(params?.params?.userMinimumLock?.amount)) {
+                reject(new Error("LockAmount cannot be less than " + params?.params?.userMinimumLock?.amount))
+              } else {
+                WalletOperation.registerSession(this.modelName, this.lockAmount, params?.params?.userMinimumLock?.denom, this.chainInfo)
+                  .then((result: any) => {
+                    console.log('registerSession-result: ', result)
+                    if (result?.transactionHash) {
+                      WalletOperation.requestAgentInfo(result?.account, this.modelName, this.chainInfo)
+                        .then((agentInfo: any) => {
+                          console.log('agentInfo: ', agentInfo)
+                          if (agentInfo && agentInfo?.inferenceAgents?.length > 0) {
+                            const selectAgent = agentInfo?.inferenceAgents[0]
+                            let agentWsUrl = selectAgent.url
+                            let agentHeartbeatUrl = selectAgent.url
+                            if (selectAgent.url?.endsWith("/")) {
+                              agentWsUrl = agentWsUrl + 'chat';
+                              agentHeartbeatUrl = agentHeartbeatUrl + 'heartbeat';
+                            } else {
+                              agentWsUrl = agentWsUrl + '/chat';
+                              agentHeartbeatUrl = agentHeartbeatUrl + '/heartbeat';
+                            }
+                            socket.init({
+                              ws_url: agentHeartbeatUrl,
+                              onopen: () => {
+                                this.agentUrl = agentWsUrl;
+                                this.isRegisterSessioning = false;
+                                resolve(result);
+                              },
+                              onerror: () => {
+                                reject(new Error("Agent heartbeat packet connection failed"));
+                              }
+                            });
+                          } else {
+                            this.isRegisterSessioning = false;
+                            reject(new Error("No agent found"))
+                          }
+                        })
+                        .catch((error) => {
+                          console.log("requestAgentInfoError: ", error);
+                          reject(error);
+                        })
                     } else {
-                      agentWsUrl = agentInfo?.inferenceAgent?.url + '/chat';
-                      agentHeartbeatUrl = agentInfo?.inferenceAgent?.url + '/heartbeat';
+                      this.isRegisterSessioning = false;
+                      reject(result);
                     }
-                    socket.init({
-                      ws_url: agentHeartbeatUrl,
-                      onopen: () => {
-                        this.agentUrl = agentWsUrl;
-                        this.isRegisterSessioning = false;
-                        resolve(result);
-                      },
-                    });
-                  } else {
+                  })
+                  .catch((error) => {
+                    console.log("registerSessionError: ", error);
                     this.isRegisterSessioning = false;
-                    reject("No agent found")
-                  }
-                })
-                .catch((error) => {
-                  console.log("requestAgentInfoError: ", error);
-                  reject('Request agent info error: ' + error?.message);
-                })
+                    reject(error);
+                  });
+              }
             } else {
-              this.isRegisterSessioning = false;
-              reject(result);
+              reject(new Error("Chain configuration loading failed."))
             }
           })
           .catch((error) => {
-            console.log("registerSessionError: ", error);
-            this.isRegisterSessioning = false;
-            reject(error);
-          });
+            reject(error)
+          })
       }
     });
   }
 
   requestChat(question: any) {
-    console.log('this.isRegisterSessioning: ', this.isRegisterSessioning)
     return new Promise((resolve, reject) => {
       if (this.isRegisterSessioning) {
         reject(new Error("Registering session, please wait"));

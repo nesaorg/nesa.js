@@ -5,8 +5,7 @@ import _m0 from "protobufjs/minimal";
 export declare const protobufPackage = "agent.v1";
 export declare enum AgentStatus {
     AGENT_STATUS_ACTIVE = 0,
-    AGENT_STATUS_UPDATING = 1,
-    AGENT_STATUS_INACTIVE = 2,
+    AGENT_STATUS_INACTIVE = 1,
     UNRECOGNIZED = -1
 }
 export declare function agentStatusFromJSON(object: any): AgentStatus;
@@ -29,6 +28,9 @@ export interface Params {
     lowestAgentVersion: Long;
     highestAgentVersion: Long;
 }
+export interface InnerValues {
+    seed: Uint8Array;
+}
 export interface Model {
     name: string;
     repositoryUrl: string;
@@ -39,6 +41,7 @@ export interface Prestige {
 }
 export interface InferenceAgent {
     account: string;
+    modelName: string;
     url: string;
     lastHeartbeat?: Date;
     version: Long;
@@ -49,6 +52,7 @@ export interface InferenceAgent {
 export interface PaymentContribution {
     account: string;
     rate: Long;
+    amount?: Coin;
 }
 export interface Payment {
     chatSeq: Long;
@@ -358,6 +362,17 @@ export declare const Params: {
         } & { [K_7 in Exclude<keyof I["highestAgentVersion"], keyof Long.Long>]: never; }) | undefined;
     } & { [K_8 in Exclude<keyof I, keyof Params>]: never; }>(object: I): Params;
 };
+export declare const InnerValues: {
+    encode(message: InnerValues, writer?: _m0.Writer): _m0.Writer;
+    decode(input: _m0.Reader | Uint8Array, length?: number): InnerValues;
+    fromJSON(object: any): InnerValues;
+    toJSON(message: InnerValues): unknown;
+    fromPartial<I extends {
+        seed?: Uint8Array | undefined;
+    } & {
+        seed?: Uint8Array | undefined;
+    } & { [K in Exclude<keyof I, "seed">]: never; }>(object: I): InnerValues;
+};
 export declare const Model: {
     encode(message: Model, writer?: _m0.Writer): _m0.Writer;
     decode(input: _m0.Reader | Uint8Array, length?: number): Model;
@@ -505,6 +520,7 @@ export declare const InferenceAgent: {
     toJSON(message: InferenceAgent): unknown;
     fromPartial<I extends {
         account?: string | undefined;
+        modelName?: string | undefined;
         url?: string | undefined;
         lastHeartbeat?: Date | undefined;
         version?: string | number | Long.Long | undefined;
@@ -519,6 +535,7 @@ export declare const InferenceAgent: {
         } | undefined;
     } & {
         account?: string | undefined;
+        modelName?: string | undefined;
         url?: string | undefined;
         lastHeartbeat?: Date | undefined;
         version?: string | number | (Long.Long & {
@@ -718,6 +735,10 @@ export declare const PaymentContribution: {
     fromPartial<I extends {
         account?: string | undefined;
         rate?: string | number | Long.Long | undefined;
+        amount?: {
+            denom?: string | undefined;
+            amount?: string | undefined;
+        } | undefined;
     } & {
         account?: string | undefined;
         rate?: string | number | (Long.Long & {
@@ -778,7 +799,14 @@ export declare const PaymentContribution: {
             toUnsigned: () => Long.Long;
             xor: (other: string | number | Long.Long) => Long.Long;
         } & { [K in Exclude<keyof I["rate"], keyof Long.Long>]: never; }) | undefined;
-    } & { [K_1 in Exclude<keyof I, keyof PaymentContribution>]: never; }>(object: I): PaymentContribution;
+        amount?: ({
+            denom?: string | undefined;
+            amount?: string | undefined;
+        } & {
+            denom?: string | undefined;
+            amount?: string | undefined;
+        } & { [K_1 in Exclude<keyof I["amount"], keyof Coin>]: never; }) | undefined;
+    } & { [K_2 in Exclude<keyof I, keyof PaymentContribution>]: never; }>(object: I): PaymentContribution;
 };
 export declare const Payment: {
     encode(message: Payment, writer?: _m0.Writer): _m0.Writer;
@@ -795,6 +823,10 @@ export declare const Payment: {
         contributions?: {
             account?: string | undefined;
             rate?: string | number | Long.Long | undefined;
+            amount?: {
+                denom?: string | undefined;
+                amount?: string | undefined;
+            } | undefined;
         }[] | undefined;
     } & {
         chatSeq?: string | number | (Long.Long & {
@@ -866,9 +898,17 @@ export declare const Payment: {
         contributions?: ({
             account?: string | undefined;
             rate?: string | number | Long.Long | undefined;
+            amount?: {
+                denom?: string | undefined;
+                amount?: string | undefined;
+            } | undefined;
         }[] & ({
             account?: string | undefined;
             rate?: string | number | Long.Long | undefined;
+            amount?: {
+                denom?: string | undefined;
+                amount?: string | undefined;
+            } | undefined;
         } & {
             account?: string | undefined;
             rate?: string | number | (Long.Long & {
@@ -929,11 +969,22 @@ export declare const Payment: {
                 toUnsigned: () => Long.Long;
                 xor: (other: string | number | Long.Long) => Long.Long;
             } & { [K_2 in Exclude<keyof I["contributions"][number]["rate"], keyof Long.Long>]: never; }) | undefined;
-        } & { [K_3 in Exclude<keyof I["contributions"][number], keyof PaymentContribution>]: never; })[] & { [K_4 in Exclude<keyof I["contributions"], keyof {
+            amount?: ({
+                denom?: string | undefined;
+                amount?: string | undefined;
+            } & {
+                denom?: string | undefined;
+                amount?: string | undefined;
+            } & { [K_3 in Exclude<keyof I["contributions"][number]["amount"], keyof Coin>]: never; }) | undefined;
+        } & { [K_4 in Exclude<keyof I["contributions"][number], keyof PaymentContribution>]: never; })[] & { [K_5 in Exclude<keyof I["contributions"], keyof {
             account?: string | undefined;
             rate?: string | number | Long.Long | undefined;
+            amount?: {
+                denom?: string | undefined;
+                amount?: string | undefined;
+            } | undefined;
         }[]>]: never; }) | undefined;
-    } & { [K_5 in Exclude<keyof I, keyof Payment>]: never; }>(object: I): Payment;
+    } & { [K_6 in Exclude<keyof I, keyof Payment>]: never; }>(object: I): Payment;
 };
 export declare const Session: {
     encode(message: Session, writer?: _m0.Writer): _m0.Writer;
@@ -964,6 +1015,10 @@ export declare const Session: {
             contributions?: {
                 account?: string | undefined;
                 rate?: string | number | Long.Long | undefined;
+                amount?: {
+                    denom?: string | undefined;
+                    amount?: string | undefined;
+                } | undefined;
             }[] | undefined;
         } | undefined;
         status?: SessionStatus | undefined;
@@ -997,6 +1052,10 @@ export declare const Session: {
             contributions?: {
                 account?: string | undefined;
                 rate?: string | number | Long.Long | undefined;
+                amount?: {
+                    denom?: string | undefined;
+                    amount?: string | undefined;
+                } | undefined;
             }[] | undefined;
         } & {
             chatSeq?: string | number | (Long.Long & {
@@ -1068,9 +1127,17 @@ export declare const Session: {
             contributions?: ({
                 account?: string | undefined;
                 rate?: string | number | Long.Long | undefined;
+                amount?: {
+                    denom?: string | undefined;
+                    amount?: string | undefined;
+                } | undefined;
             }[] & ({
                 account?: string | undefined;
                 rate?: string | number | Long.Long | undefined;
+                amount?: {
+                    denom?: string | undefined;
+                    amount?: string | undefined;
+                } | undefined;
             } & {
                 account?: string | undefined;
                 rate?: string | number | (Long.Long & {
@@ -1131,13 +1198,24 @@ export declare const Session: {
                     toUnsigned: () => Long.Long;
                     xor: (other: string | number | Long.Long) => Long.Long;
                 } & { [K_4 in Exclude<keyof I["payment"]["contributions"][number]["rate"], keyof Long.Long>]: never; }) | undefined;
-            } & { [K_5 in Exclude<keyof I["payment"]["contributions"][number], keyof PaymentContribution>]: never; })[] & { [K_6 in Exclude<keyof I["payment"]["contributions"], keyof {
+                amount?: ({
+                    denom?: string | undefined;
+                    amount?: string | undefined;
+                } & {
+                    denom?: string | undefined;
+                    amount?: string | undefined;
+                } & { [K_5 in Exclude<keyof I["payment"]["contributions"][number]["amount"], keyof Coin>]: never; }) | undefined;
+            } & { [K_6 in Exclude<keyof I["payment"]["contributions"][number], keyof PaymentContribution>]: never; })[] & { [K_7 in Exclude<keyof I["payment"]["contributions"], keyof {
                 account?: string | undefined;
                 rate?: string | number | Long.Long | undefined;
+                amount?: {
+                    denom?: string | undefined;
+                    amount?: string | undefined;
+                } | undefined;
             }[]>]: never; }) | undefined;
-        } & { [K_7 in Exclude<keyof I["payment"], keyof Payment>]: never; }) | undefined;
+        } & { [K_8 in Exclude<keyof I["payment"], keyof Payment>]: never; }) | undefined;
         status?: SessionStatus | undefined;
-    } & { [K_8 in Exclude<keyof I, keyof Session>]: never; }>(object: I): Session;
+    } & { [K_9 in Exclude<keyof I, keyof Session>]: never; }>(object: I): Session;
 };
 export declare const VrfSeed: {
     encode(message: VrfSeed, writer?: _m0.Writer): _m0.Writer;

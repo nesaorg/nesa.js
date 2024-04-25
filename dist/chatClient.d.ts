@@ -1,8 +1,8 @@
 import { ChainInfo } from "@keplr-wallet/types";
 interface ConfigOptions {
     modelName: string;
-    chainInfo?: ChainInfo;
     lockAmount?: string;
+    chainInfo?: ChainInfo;
 }
 interface questionTypes {
     messages: any;
@@ -12,6 +12,7 @@ declare class ChatClient {
     modelName: string;
     chainInfo: ChainInfo;
     lockAmount: string;
+    lockAmountDenom: string;
     private chatQueue;
     private chatSeq;
     private totalPayment;

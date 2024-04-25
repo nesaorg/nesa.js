@@ -2,6 +2,7 @@
 interface ISocket {
     web_socket: WebSocket | null;
     ws_url: string;
+    ever_succeeded: boolean;
     socket_open: boolean;
     heartbeat_timer: NodeJS.Timeout | string | number | undefined;
     heartbeat_interval: number;

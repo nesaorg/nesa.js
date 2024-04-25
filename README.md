@@ -19,7 +19,11 @@ npm link nesa-sdk
 
 ```
 import { ChatClient } from 'nesa-sdk';
-const ChatUtils = new ChatClient({modelName: ""})
+const ChatUtils = new ChatClient({
+  modelName: "",  //  model name
+  lockAmount: "", //  lock amount , default 1000
+  chainInfo: {} //  Refer to the defaultChainInfo format in src/default.config.ts
+})
 ```
 
 #### `requestSession`: First initiate a signature

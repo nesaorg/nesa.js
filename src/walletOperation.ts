@@ -1,13 +1,13 @@
 import { AccountData } from "@cosmjs/proto-signing";
 import { NesaClient } from "./client";
 import { GasPrice } from "@cosmjs/stargate";
-import long from "long";
 import { ChainInfo } from "@keplr-wallet/types"
 import { defaultChainInfo } from "./default.config";
 import EncryptUtils from "./encryptUtils";
+import Long from "long";
 
 class WalletOperation {
-  static registerSession(modelName: string, lockAmount: string, chainInfo?: ChainInfo): Promise<any> {
+  static registerSession(modelName: string, lockAmount: string, denom: string, chainInfo?: ChainInfo): Promise<any> {
     EncryptUtils.generateKey();
     return new Promise(async (resolve, reject) => {
       let selectChainInfo = defaultChainInfo;
@@ -41,10 +41,7 @@ class WalletOperation {
             estimatedIndexerTime: 5,
           }
         );
-        const lockBalance = {
-          denom: selectChainInfo.feeCurrencies[0].coinMinimalDenom,
-          amount: lockAmount,
-        };
+        const lockBalance = { denom: denom, amount: lockAmount };
         EncryptUtils.requestVrf().then(async (res) => {
           if (res?.vrf && res?.sessionId) {
             resolve(nesaClient.registerSession(res.sessionId, modelName, lockBalance, res.vrf))
@@ -61,8 +58,7 @@ class WalletOperation {
     })
   }
 
-  static requestAgentInfo(agentName: string, chainInfo?: ChainInfo): Promise<any> {
-    console.log('agentId: ', agentName)
+  static requestAgentInfo(agentName: string, modelName: string, chainInfo?: ChainInfo): Promise<any> {
     return new Promise(async (resolve, reject) => {
       let selectChainInfo = defaultChainInfo;
       if (chainInfo) {
@@ -81,7 +77,6 @@ class WalletOperation {
         await keplr.enable(selectChainInfo.chainId);
         const offlineSigner = window.getOfflineSigner!(chainId);
         const account: AccountData = (await offlineSigner.getAccounts())[0];
-        console.log('account: ', account)
         NesaClient.connectWithSigner(
           rpc,
           offlineSigner,
@@ -94,12 +89,8 @@ class WalletOperation {
             estimatedIndexerTime: 5,
           }
         ).then((client) => {
-          console.log('nesaClient: ', client)
           if (client) {
-            const encoder = new TextEncoder();
-            console.log('encoder.encode: ', encoder.encode('0'))
-            console.log('e1ncoder.encode: ', encoder.encode(''))
-            resolve(client.getInferenceAgent(agentName))
+            resolve(client.getInferenceAgent(agentName, modelName, Long.fromNumber(0)))
           } else {
             reject("Client init failed");
           }
@@ -112,7 +103,7 @@ class WalletOperation {
     })
   }
 
-  static requestAllModel(chainInfo?: ChainInfo, offset?: number, limit?: number, reverse?: boolean): Promise<any> {
+  static requestParams(chainInfo?: ChainInfo): Promise<any> {
     return new Promise(async (resolve, reject) => {
       let selectChainInfo = defaultChainInfo;
       if (chainInfo) {
@@ -143,12 +134,8 @@ class WalletOperation {
             estimatedIndexerTime: 5,
           }
         ).then((client) => {
-          console.log('nesaClient: ', client)
           if (client) {
-            const encoder = new TextEncoder();
-            client.getAllModel(encoder.encode(''), long.fromNumber(offset || 0), long.fromNumber(limit || 0), true, !!reverse)
-              .then((res) => { resolve(res) })
-              .catch((err) => { reject(err) })
+            resolve(client.getParams())
           } else {
             reject("Client init failed");
           }
@@ -180,7 +167,6 @@ class WalletOperation {
         await keplr.enable(selectChainInfo.chainId);
         const offlineSigner = window.getOfflineSigner!(chainId);
         const account: AccountData = (await offlineSigner.getAccounts())[0];
-        console.log('account: ', account)
         NesaClient.connectWithSigner(
           rpc,
           offlineSigner,
@@ -193,7 +179,6 @@ class WalletOperation {
             estimatedIndexerTime: 5,
           }
         ).then((client) => {
-          console.log('nesaClient: ', client)
           if (client) {
             resolve(client.getVRFSeed(account.address))
           } else {

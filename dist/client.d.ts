@@ -46,7 +46,7 @@ export declare class NesaClient {
     getModel(name: string): Promise<QueryModelResponse>;
     getAllModel(key: Uint8Array, offset: Long, limit: Long, countTotal: boolean, reverse: boolean): Promise<QueryModelAllResponse>;
     getParams(): Promise<QueryParamsResponse>;
-    getInferenceAgent(account: string): Promise<QueryInferenceAgentResponse>;
+    getInferenceAgent(account: string, modelName: string, limit: Long): Promise<QueryInferenceAgentResponse>;
     getSession(sessionId: string): Promise<QuerySessionResponse>;
     getSessionByAgent(account: string, status: SessionStatus, limit: Long, orderDesc: boolean, expireTime?: Date): Promise<QuerySessionByAgentResponse>;
     getVRFSeed(account: string): Promise<QueryVRFSeedResponse>;

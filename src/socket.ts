@@ -3,6 +3,7 @@ import EncryptUtils from "./encryptUtils";
 interface ISocket {
     web_socket: WebSocket | null,
     ws_url: string,
+    ever_succeeded: boolean,
     socket_open: boolean,
     heartbeat_timer: NodeJS.Timeout | string | number | undefined,
     heartbeat_interval: number,
@@ -20,6 +21,7 @@ interface ISocket {
 
 export const socket: ISocket = {
     web_socket: null,
+    ever_succeeded: false,
     ws_url: "",
     socket_open: false,
     heartbeat_timer: undefined,
@@ -31,16 +33,19 @@ export const socket: ISocket = {
         socket.web_socket = new WebSocket(socket.ws_url);
         socket.web_socket.onopen = () => {
             socket.socket_open = true;
+            socket.ever_succeeded = true;
             socket.heartbeat();
             handle?.onopen && handle.onopen()
         }
         socket.web_socket.onclose = (e) => {
-            clearInterval(socket.heartbeat_timer)
-            socket.socket_open = false
-            handle?.onclose && handle.onclose(e)
-            setTimeout(() => {
-                socket.init(handle)
-            }, 5000);
+            if (socket.ever_succeeded) {
+                clearInterval(socket.heartbeat_timer)
+                setTimeout(() => {
+                    socket.init(handle)
+                }, socket.heartbeat_interval);
+                socket.socket_open = false
+                handle?.onclose && handle.onclose(e)
+            }
         }
         socket.web_socket.onerror = (e) => {
             handle?.onerror && handle.onerror(e)

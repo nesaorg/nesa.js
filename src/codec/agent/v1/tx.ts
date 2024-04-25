@@ -1,5 +1,11 @@
 /* eslint-disable */
-import { Params, Payment } from "./agent";
+import {
+  Params,
+  AgentStatus,
+  Payment,
+  agentStatusFromJSON,
+  agentStatusToJSON,
+} from "./agent";
 import { Coin } from "../../cosmos/base/v1beta1/coin";
 import Long from "long";
 import _m0 from "protobufjs/minimal";
@@ -23,6 +29,7 @@ export interface MsgRegisterModelResponse {}
 
 export interface MsgRegisterInferenceAgent {
   account: string;
+  modelName: string;
   url: string;
   version: Long;
   lockBalance?: Coin;
@@ -32,9 +39,11 @@ export interface MsgRegisterInferenceAgentResponse {}
 
 export interface MsgUpdateInferenceAgent {
   account: string;
+  modelName: string;
   url: string;
   version: Long;
   lockBalance?: Coin;
+  status: AgentStatus;
 }
 
 export interface MsgUpdateInferenceAgentResponse {}
@@ -55,6 +64,7 @@ export interface MsgRegisterSession {
 
 export interface MsgRegisterSessionResponse {
   account: string;
+  modelName: string;
 }
 
 export interface MsgSubmitPayment {
@@ -317,7 +327,13 @@ export const MsgRegisterModelResponse = {
 };
 
 function createBaseMsgRegisterInferenceAgent(): MsgRegisterInferenceAgent {
-  return { account: "", url: "", version: Long.UZERO, lockBalance: undefined };
+  return {
+    account: "",
+    modelName: "",
+    url: "",
+    version: Long.UZERO,
+    lockBalance: undefined,
+  };
 }
 
 export const MsgRegisterInferenceAgent = {
@@ -328,14 +344,17 @@ export const MsgRegisterInferenceAgent = {
     if (message.account !== "") {
       writer.uint32(10).string(message.account);
     }
+    if (message.modelName !== "") {
+      writer.uint32(18).string(message.modelName);
+    }
     if (message.url !== "") {
-      writer.uint32(18).string(message.url);
+      writer.uint32(26).string(message.url);
     }
     if (!message.version.isZero()) {
-      writer.uint32(24).uint64(message.version);
+      writer.uint32(32).uint64(message.version);
     }
     if (message.lockBalance !== undefined) {
-      Coin.encode(message.lockBalance, writer.uint32(34).fork()).ldelim();
+      Coin.encode(message.lockBalance, writer.uint32(42).fork()).ldelim();
     }
     return writer;
   },
@@ -354,12 +373,15 @@ export const MsgRegisterInferenceAgent = {
           message.account = reader.string();
           break;
         case 2:
-          message.url = reader.string();
+          message.modelName = reader.string();
           break;
         case 3:
-          message.version = reader.uint64() as Long;
+          message.url = reader.string();
           break;
         case 4:
+          message.version = reader.uint64() as Long;
+          break;
+        case 5:
           message.lockBalance = Coin.decode(reader, reader.uint32());
           break;
         default:
@@ -373,6 +395,7 @@ export const MsgRegisterInferenceAgent = {
   fromJSON(object: any): MsgRegisterInferenceAgent {
     return {
       account: isSet(object.account) ? String(object.account) : "",
+      modelName: isSet(object.modelName) ? String(object.modelName) : "",
       url: isSet(object.url) ? String(object.url) : "",
       version: isSet(object.version)
         ? Long.fromValue(object.version)
@@ -386,6 +409,7 @@ export const MsgRegisterInferenceAgent = {
   toJSON(message: MsgRegisterInferenceAgent): unknown {
     const obj: any = {};
     message.account !== undefined && (obj.account = message.account);
+    message.modelName !== undefined && (obj.modelName = message.modelName);
     message.url !== undefined && (obj.url = message.url);
     message.version !== undefined &&
       (obj.version = (message.version || Long.UZERO).toString());
@@ -401,6 +425,7 @@ export const MsgRegisterInferenceAgent = {
   ): MsgRegisterInferenceAgent {
     const message = createBaseMsgRegisterInferenceAgent();
     message.account = object.account ?? "";
+    message.modelName = object.modelName ?? "";
     message.url = object.url ?? "";
     message.version =
       object.version !== undefined && object.version !== null
@@ -462,7 +487,14 @@ export const MsgRegisterInferenceAgentResponse = {
 };
 
 function createBaseMsgUpdateInferenceAgent(): MsgUpdateInferenceAgent {
-  return { account: "", url: "", version: Long.UZERO, lockBalance: undefined };
+  return {
+    account: "",
+    modelName: "",
+    url: "",
+    version: Long.UZERO,
+    lockBalance: undefined,
+    status: 0,
+  };
 }
 
 export const MsgUpdateInferenceAgent = {
@@ -473,14 +505,20 @@ export const MsgUpdateInferenceAgent = {
     if (message.account !== "") {
       writer.uint32(10).string(message.account);
     }
+    if (message.modelName !== "") {
+      writer.uint32(18).string(message.modelName);
+    }
     if (message.url !== "") {
-      writer.uint32(18).string(message.url);
+      writer.uint32(26).string(message.url);
     }
     if (!message.version.isZero()) {
-      writer.uint32(24).uint64(message.version);
+      writer.uint32(32).uint64(message.version);
     }
     if (message.lockBalance !== undefined) {
-      Coin.encode(message.lockBalance, writer.uint32(34).fork()).ldelim();
+      Coin.encode(message.lockBalance, writer.uint32(42).fork()).ldelim();
+    }
+    if (message.status !== 0) {
+      writer.uint32(48).int32(message.status);
     }
     return writer;
   },
@@ -499,13 +537,19 @@ export const MsgUpdateInferenceAgent = {
           message.account = reader.string();
           break;
         case 2:
-          message.url = reader.string();
+          message.modelName = reader.string();
           break;
         case 3:
-          message.version = reader.uint64() as Long;
+          message.url = reader.string();
           break;
         case 4:
+          message.version = reader.uint64() as Long;
+          break;
+        case 5:
           message.lockBalance = Coin.decode(reader, reader.uint32());
+          break;
+        case 6:
+          message.status = reader.int32() as any;
           break;
         default:
           reader.skipType(tag & 7);
@@ -518,6 +562,7 @@ export const MsgUpdateInferenceAgent = {
   fromJSON(object: any): MsgUpdateInferenceAgent {
     return {
       account: isSet(object.account) ? String(object.account) : "",
+      modelName: isSet(object.modelName) ? String(object.modelName) : "",
       url: isSet(object.url) ? String(object.url) : "",
       version: isSet(object.version)
         ? Long.fromValue(object.version)
@@ -525,12 +570,14 @@ export const MsgUpdateInferenceAgent = {
       lockBalance: isSet(object.lockBalance)
         ? Coin.fromJSON(object.lockBalance)
         : undefined,
+      status: isSet(object.status) ? agentStatusFromJSON(object.status) : 0,
     };
   },
 
   toJSON(message: MsgUpdateInferenceAgent): unknown {
     const obj: any = {};
     message.account !== undefined && (obj.account = message.account);
+    message.modelName !== undefined && (obj.modelName = message.modelName);
     message.url !== undefined && (obj.url = message.url);
     message.version !== undefined &&
       (obj.version = (message.version || Long.UZERO).toString());
@@ -538,6 +585,8 @@ export const MsgUpdateInferenceAgent = {
       (obj.lockBalance = message.lockBalance
         ? Coin.toJSON(message.lockBalance)
         : undefined);
+    message.status !== undefined &&
+      (obj.status = agentStatusToJSON(message.status));
     return obj;
   },
 
@@ -546,6 +595,7 @@ export const MsgUpdateInferenceAgent = {
   ): MsgUpdateInferenceAgent {
     const message = createBaseMsgUpdateInferenceAgent();
     message.account = object.account ?? "";
+    message.modelName = object.modelName ?? "";
     message.url = object.url ?? "";
     message.version =
       object.version !== undefined && object.version !== null
@@ -555,6 +605,7 @@ export const MsgUpdateInferenceAgent = {
       object.lockBalance !== undefined && object.lockBalance !== null
         ? Coin.fromPartial(object.lockBalance)
         : undefined;
+    message.status = object.status ?? 0;
     return message;
   },
 };
@@ -801,7 +852,7 @@ export const MsgRegisterSession = {
 };
 
 function createBaseMsgRegisterSessionResponse(): MsgRegisterSessionResponse {
-  return { account: "" };
+  return { account: "", modelName: "" };
 }
 
 export const MsgRegisterSessionResponse = {
@@ -811,6 +862,9 @@ export const MsgRegisterSessionResponse = {
   ): _m0.Writer {
     if (message.account !== "") {
       writer.uint32(10).string(message.account);
+    }
+    if (message.modelName !== "") {
+      writer.uint32(18).string(message.modelName);
     }
     return writer;
   },
@@ -828,6 +882,9 @@ export const MsgRegisterSessionResponse = {
         case 1:
           message.account = reader.string();
           break;
+        case 2:
+          message.modelName = reader.string();
+          break;
         default:
           reader.skipType(tag & 7);
           break;
@@ -839,12 +896,14 @@ export const MsgRegisterSessionResponse = {
   fromJSON(object: any): MsgRegisterSessionResponse {
     return {
       account: isSet(object.account) ? String(object.account) : "",
+      modelName: isSet(object.modelName) ? String(object.modelName) : "",
     };
   },
 
   toJSON(message: MsgRegisterSessionResponse): unknown {
     const obj: any = {};
     message.account !== undefined && (obj.account = message.account);
+    message.modelName !== undefined && (obj.modelName = message.modelName);
     return obj;
   },
 
@@ -853,6 +912,7 @@ export const MsgRegisterSessionResponse = {
   ): MsgRegisterSessionResponse {
     const message = createBaseMsgRegisterSessionResponse();
     message.account = object.account ?? "";
+    message.modelName = object.modelName ?? "";
     return message;
   },
 };

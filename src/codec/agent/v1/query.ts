@@ -2,9 +2,9 @@
 import {
   Params,
   Model,
-  InferenceAgent,
   Session,
   SessionStatus,
+  InferenceAgent,
   sessionStatusFromJSON,
   sessionStatusToJSON,
 } from "./agent";
@@ -44,10 +44,12 @@ export interface QueryModelAllResponse {
 
 export interface QueryInferenceAgentRequest {
   account: string;
+  modelName: string;
+  limit: Long;
 }
 
 export interface QueryInferenceAgentResponse {
-  inferenceAgent?: InferenceAgent;
+  inferenceAgents: InferenceAgent[];
 }
 
 export interface QuerySessionRequest {
@@ -441,7 +443,7 @@ export const QueryModelAllResponse = {
 };
 
 function createBaseQueryInferenceAgentRequest(): QueryInferenceAgentRequest {
-  return { account: "" };
+  return { account: "", modelName: "", limit: Long.UZERO };
 }
 
 export const QueryInferenceAgentRequest = {
@@ -451,6 +453,12 @@ export const QueryInferenceAgentRequest = {
   ): _m0.Writer {
     if (message.account !== "") {
       writer.uint32(10).string(message.account);
+    }
+    if (message.modelName !== "") {
+      writer.uint32(18).string(message.modelName);
+    }
+    if (!message.limit.isZero()) {
+      writer.uint32(24).uint64(message.limit);
     }
     return writer;
   },
@@ -468,6 +476,12 @@ export const QueryInferenceAgentRequest = {
         case 1:
           message.account = reader.string();
           break;
+        case 2:
+          message.modelName = reader.string();
+          break;
+        case 3:
+          message.limit = reader.uint64() as Long;
+          break;
         default:
           reader.skipType(tag & 7);
           break;
@@ -479,12 +493,17 @@ export const QueryInferenceAgentRequest = {
   fromJSON(object: any): QueryInferenceAgentRequest {
     return {
       account: isSet(object.account) ? String(object.account) : "",
+      modelName: isSet(object.modelName) ? String(object.modelName) : "",
+      limit: isSet(object.limit) ? Long.fromValue(object.limit) : Long.UZERO,
     };
   },
 
   toJSON(message: QueryInferenceAgentRequest): unknown {
     const obj: any = {};
     message.account !== undefined && (obj.account = message.account);
+    message.modelName !== undefined && (obj.modelName = message.modelName);
+    message.limit !== undefined &&
+      (obj.limit = (message.limit || Long.UZERO).toString());
     return obj;
   },
 
@@ -493,12 +512,17 @@ export const QueryInferenceAgentRequest = {
   ): QueryInferenceAgentRequest {
     const message = createBaseQueryInferenceAgentRequest();
     message.account = object.account ?? "";
+    message.modelName = object.modelName ?? "";
+    message.limit =
+      object.limit !== undefined && object.limit !== null
+        ? Long.fromValue(object.limit)
+        : Long.UZERO;
     return message;
   },
 };
 
 function createBaseQueryInferenceAgentResponse(): QueryInferenceAgentResponse {
-  return { inferenceAgent: undefined };
+  return { inferenceAgents: [] };
 }
 
 export const QueryInferenceAgentResponse = {
@@ -506,11 +530,8 @@ export const QueryInferenceAgentResponse = {
     message: QueryInferenceAgentResponse,
     writer: _m0.Writer = _m0.Writer.create()
   ): _m0.Writer {
-    if (message.inferenceAgent !== undefined) {
-      InferenceAgent.encode(
-        message.inferenceAgent,
-        writer.uint32(10).fork()
-      ).ldelim();
+    for (const v of message.inferenceAgents) {
+      InferenceAgent.encode(v!, writer.uint32(10).fork()).ldelim();
     }
     return writer;
   },
@@ -526,9 +547,8 @@ export const QueryInferenceAgentResponse = {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
-          message.inferenceAgent = InferenceAgent.decode(
-            reader,
-            reader.uint32()
+          message.inferenceAgents.push(
+            InferenceAgent.decode(reader, reader.uint32())
           );
           break;
         default:
@@ -541,18 +561,21 @@ export const QueryInferenceAgentResponse = {
 
   fromJSON(object: any): QueryInferenceAgentResponse {
     return {
-      inferenceAgent: isSet(object.inferenceAgent)
-        ? InferenceAgent.fromJSON(object.inferenceAgent)
-        : undefined,
+      inferenceAgents: Array.isArray(object?.inferenceAgents)
+        ? object.inferenceAgents.map((e: any) => InferenceAgent.fromJSON(e))
+        : [],
     };
   },
 
   toJSON(message: QueryInferenceAgentResponse): unknown {
     const obj: any = {};
-    message.inferenceAgent !== undefined &&
-      (obj.inferenceAgent = message.inferenceAgent
-        ? InferenceAgent.toJSON(message.inferenceAgent)
-        : undefined);
+    if (message.inferenceAgents) {
+      obj.inferenceAgents = message.inferenceAgents.map((e) =>
+        e ? InferenceAgent.toJSON(e) : undefined
+      );
+    } else {
+      obj.inferenceAgents = [];
+    }
     return obj;
   },
 
@@ -560,10 +583,8 @@ export const QueryInferenceAgentResponse = {
     object: I
   ): QueryInferenceAgentResponse {
     const message = createBaseQueryInferenceAgentResponse();
-    message.inferenceAgent =
-      object.inferenceAgent !== undefined && object.inferenceAgent !== null
-        ? InferenceAgent.fromPartial(object.inferenceAgent)
-        : undefined;
+    message.inferenceAgents =
+      object.inferenceAgents?.map((e) => InferenceAgent.fromPartial(e)) || [];
     return message;
   },
 };

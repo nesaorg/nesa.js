@@ -371,8 +371,8 @@ export class NesaClient{
     return result;
   }
 
-  public async getInferenceAgent(account: string): Promise<QueryInferenceAgentResponse> {
-    const result = await this.query.agent.inferenceAgentRequest(account);
+  public async getInferenceAgent(account: string, modelName: string, limit: Long): Promise<QueryInferenceAgentResponse> {
+    const result = await this.query.agent.inferenceAgentRequest(account, modelName, limit);
     return result;
   }
 

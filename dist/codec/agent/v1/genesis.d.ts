@@ -1,11 +1,11 @@
-import { Params, Model, InferenceAgent, Session, VrfSeed } from "./agent";
+import { Params, InnerValues, Model, InferenceAgent, Session, VrfSeed } from "./agent";
 import Long from "long";
 import _m0 from "protobufjs/minimal";
 export declare const protobufPackage = "agent.v1";
 export interface GenesisState {
     params?: Params;
+    innerValues?: InnerValues;
     models: Model[];
-    startingAgentId: Long;
     agents: InferenceAgent[];
     sessions: Session[];
     vrfSeeds: VrfSeed[];
@@ -37,13 +37,16 @@ export declare const GenesisState: {
             lowestAgentVersion?: string | number | Long.Long | undefined;
             highestAgentVersion?: string | number | Long.Long | undefined;
         } | undefined;
+        innerValues?: {
+            seed?: Uint8Array | undefined;
+        } | undefined;
         models?: {
             name?: string | undefined;
             repositoryUrl?: string | undefined;
         }[] | undefined;
-        startingAgentId?: string | number | Long.Long | undefined;
         agents?: {
             account?: string | undefined;
+            modelName?: string | undefined;
             url?: string | undefined;
             lastHeartbeat?: Date | undefined;
             version?: string | number | Long.Long | undefined;
@@ -81,6 +84,10 @@ export declare const GenesisState: {
                 contributions?: {
                     account?: string | undefined;
                     rate?: string | number | Long.Long | undefined;
+                    amount?: {
+                        denom?: string | undefined;
+                        amount?: string | undefined;
+                    } | undefined;
                 }[] | undefined;
             } | undefined;
             status?: import("./agent").SessionStatus | undefined;
@@ -371,6 +378,11 @@ export declare const GenesisState: {
                 xor: (other: string | number | Long.Long) => Long.Long;
             } & { [K_7 in Exclude<keyof I["params"]["highestAgentVersion"], keyof Long.Long>]: never; }) | undefined;
         } & { [K_8 in Exclude<keyof I["params"], keyof Params>]: never; }) | undefined;
+        innerValues?: ({
+            seed?: Uint8Array | undefined;
+        } & {
+            seed?: Uint8Array | undefined;
+        } & { [K_9 in Exclude<keyof I["innerValues"], "seed">]: never; }) | undefined;
         models?: ({
             name?: string | undefined;
             repositoryUrl?: string | undefined;
@@ -380,70 +392,13 @@ export declare const GenesisState: {
         } & {
             name?: string | undefined;
             repositoryUrl?: string | undefined;
-        } & { [K_9 in Exclude<keyof I["models"][number], keyof Model>]: never; })[] & { [K_10 in Exclude<keyof I["models"], keyof {
+        } & { [K_10 in Exclude<keyof I["models"][number], keyof Model>]: never; })[] & { [K_11 in Exclude<keyof I["models"], keyof {
             name?: string | undefined;
             repositoryUrl?: string | undefined;
         }[]>]: never; }) | undefined;
-        startingAgentId?: string | number | (Long.Long & {
-            high: number;
-            low: number;
-            unsigned: boolean;
-            add: (addend: string | number | Long.Long) => Long.Long;
-            and: (other: string | number | Long.Long) => Long.Long;
-            compare: (other: string | number | Long.Long) => number;
-            comp: (other: string | number | Long.Long) => number;
-            divide: (divisor: string | number | Long.Long) => Long.Long;
-            div: (divisor: string | number | Long.Long) => Long.Long;
-            equals: (other: string | number | Long.Long) => boolean;
-            eq: (other: string | number | Long.Long) => boolean;
-            getHighBits: () => number;
-            getHighBitsUnsigned: () => number;
-            getLowBits: () => number;
-            getLowBitsUnsigned: () => number;
-            getNumBitsAbs: () => number;
-            greaterThan: (other: string | number | Long.Long) => boolean;
-            gt: (other: string | number | Long.Long) => boolean;
-            greaterThanOrEqual: (other: string | number | Long.Long) => boolean;
-            gte: (other: string | number | Long.Long) => boolean;
-            isEven: () => boolean;
-            isNegative: () => boolean;
-            isOdd: () => boolean;
-            isPositive: () => boolean;
-            isZero: () => boolean;
-            lessThan: (other: string | number | Long.Long) => boolean;
-            lt: (other: string | number | Long.Long) => boolean;
-            lessThanOrEqual: (other: string | number | Long.Long) => boolean;
-            lte: (other: string | number | Long.Long) => boolean;
-            modulo: (other: string | number | Long.Long) => Long.Long;
-            mod: (other: string | number | Long.Long) => Long.Long;
-            multiply: (multiplier: string | number | Long.Long) => Long.Long;
-            mul: (multiplier: string | number | Long.Long) => Long.Long;
-            negate: () => Long.Long;
-            neg: () => Long.Long;
-            not: () => Long.Long;
-            notEquals: (other: string | number | Long.Long) => boolean;
-            neq: (other: string | number | Long.Long) => boolean;
-            or: (other: string | number | Long.Long) => Long.Long;
-            shiftLeft: (numBits: number | Long.Long) => Long.Long;
-            shl: (numBits: number | Long.Long) => Long.Long;
-            shiftRight: (numBits: number | Long.Long) => Long.Long;
-            shr: (numBits: number | Long.Long) => Long.Long;
-            shiftRightUnsigned: (numBits: number | Long.Long) => Long.Long;
-            shru: (numBits: number | Long.Long) => Long.Long;
-            subtract: (subtrahend: string | number | Long.Long) => Long.Long;
-            sub: (subtrahend: string | number | Long.Long) => Long.Long;
-            toInt: () => number;
-            toNumber: () => number;
-            toBytes: (le?: boolean | undefined) => number[];
-            toBytesLE: () => number[];
-            toBytesBE: () => number[];
-            toSigned: () => Long.Long;
-            toString: (radix?: number | undefined) => string;
-            toUnsigned: () => Long.Long;
-            xor: (other: string | number | Long.Long) => Long.Long;
-        } & { [K_11 in Exclude<keyof I["startingAgentId"], keyof Long.Long>]: never; }) | undefined;
         agents?: ({
             account?: string | undefined;
+            modelName?: string | undefined;
             url?: string | undefined;
             lastHeartbeat?: Date | undefined;
             version?: string | number | Long.Long | undefined;
@@ -458,6 +413,7 @@ export declare const GenesisState: {
             } | undefined;
         }[] & ({
             account?: string | undefined;
+            modelName?: string | undefined;
             url?: string | undefined;
             lastHeartbeat?: Date | undefined;
             version?: string | number | Long.Long | undefined;
@@ -472,6 +428,7 @@ export declare const GenesisState: {
             } | undefined;
         } & {
             account?: string | undefined;
+            modelName?: string | undefined;
             url?: string | undefined;
             lastHeartbeat?: Date | undefined;
             version?: string | number | (Long.Long & {
@@ -663,6 +620,7 @@ export declare const GenesisState: {
             } & { [K_16 in Exclude<keyof I["agents"][number]["prestige"], keyof import("./agent").Prestige>]: never; }) | undefined;
         } & { [K_17 in Exclude<keyof I["agents"][number], keyof InferenceAgent>]: never; })[] & { [K_18 in Exclude<keyof I["agents"], keyof {
             account?: string | undefined;
+            modelName?: string | undefined;
             url?: string | undefined;
             lastHeartbeat?: Date | undefined;
             version?: string | number | Long.Long | undefined;
@@ -700,6 +658,10 @@ export declare const GenesisState: {
                 contributions?: {
                     account?: string | undefined;
                     rate?: string | number | Long.Long | undefined;
+                    amount?: {
+                        denom?: string | undefined;
+                        amount?: string | undefined;
+                    } | undefined;
                 }[] | undefined;
             } | undefined;
             status?: import("./agent").SessionStatus | undefined;
@@ -727,6 +689,10 @@ export declare const GenesisState: {
                 contributions?: {
                     account?: string | undefined;
                     rate?: string | number | Long.Long | undefined;
+                    amount?: {
+                        denom?: string | undefined;
+                        amount?: string | undefined;
+                    } | undefined;
                 }[] | undefined;
             } | undefined;
             status?: import("./agent").SessionStatus | undefined;
@@ -760,6 +726,10 @@ export declare const GenesisState: {
                 contributions?: {
                     account?: string | undefined;
                     rate?: string | number | Long.Long | undefined;
+                    amount?: {
+                        denom?: string | undefined;
+                        amount?: string | undefined;
+                    } | undefined;
                 }[] | undefined;
             } & {
                 chatSeq?: string | number | (Long.Long & {
@@ -831,9 +801,17 @@ export declare const GenesisState: {
                 contributions?: ({
                     account?: string | undefined;
                     rate?: string | number | Long.Long | undefined;
+                    amount?: {
+                        denom?: string | undefined;
+                        amount?: string | undefined;
+                    } | undefined;
                 }[] & ({
                     account?: string | undefined;
                     rate?: string | number | Long.Long | undefined;
+                    amount?: {
+                        denom?: string | undefined;
+                        amount?: string | undefined;
+                    } | undefined;
                 } & {
                     account?: string | undefined;
                     rate?: string | number | (Long.Long & {
@@ -894,13 +872,24 @@ export declare const GenesisState: {
                         toUnsigned: () => Long.Long;
                         xor: (other: string | number | Long.Long) => Long.Long;
                     } & { [K_23 in Exclude<keyof I["sessions"][number]["payment"]["contributions"][number]["rate"], keyof Long.Long>]: never; }) | undefined;
-                } & { [K_24 in Exclude<keyof I["sessions"][number]["payment"]["contributions"][number], keyof import("./agent").PaymentContribution>]: never; })[] & { [K_25 in Exclude<keyof I["sessions"][number]["payment"]["contributions"], keyof {
+                    amount?: ({
+                        denom?: string | undefined;
+                        amount?: string | undefined;
+                    } & {
+                        denom?: string | undefined;
+                        amount?: string | undefined;
+                    } & { [K_24 in Exclude<keyof I["sessions"][number]["payment"]["contributions"][number]["amount"], keyof import("../../cosmos/base/v1beta1/coin").Coin>]: never; }) | undefined;
+                } & { [K_25 in Exclude<keyof I["sessions"][number]["payment"]["contributions"][number], keyof import("./agent").PaymentContribution>]: never; })[] & { [K_26 in Exclude<keyof I["sessions"][number]["payment"]["contributions"], keyof {
                     account?: string | undefined;
                     rate?: string | number | Long.Long | undefined;
+                    amount?: {
+                        denom?: string | undefined;
+                        amount?: string | undefined;
+                    } | undefined;
                 }[]>]: never; }) | undefined;
-            } & { [K_26 in Exclude<keyof I["sessions"][number]["payment"], keyof import("./agent").Payment>]: never; }) | undefined;
+            } & { [K_27 in Exclude<keyof I["sessions"][number]["payment"], keyof import("./agent").Payment>]: never; }) | undefined;
             status?: import("./agent").SessionStatus | undefined;
-        } & { [K_27 in Exclude<keyof I["sessions"][number], keyof Session>]: never; })[] & { [K_28 in Exclude<keyof I["sessions"], keyof {
+        } & { [K_28 in Exclude<keyof I["sessions"][number], keyof Session>]: never; })[] & { [K_29 in Exclude<keyof I["sessions"], keyof {
             sessionId?: string | undefined;
             account?: string | undefined;
             modelName?: string | undefined;
@@ -924,6 +913,10 @@ export declare const GenesisState: {
                 contributions?: {
                     account?: string | undefined;
                     rate?: string | number | Long.Long | undefined;
+                    amount?: {
+                        denom?: string | undefined;
+                        amount?: string | undefined;
+                    } | undefined;
                 }[] | undefined;
             } | undefined;
             status?: import("./agent").SessionStatus | undefined;
@@ -937,11 +930,11 @@ export declare const GenesisState: {
         } & {
             account?: string | undefined;
             seed?: Uint8Array | undefined;
-        } & { [K_29 in Exclude<keyof I["vrfSeeds"][number], keyof VrfSeed>]: never; })[] & { [K_30 in Exclude<keyof I["vrfSeeds"], keyof {
+        } & { [K_30 in Exclude<keyof I["vrfSeeds"][number], keyof VrfSeed>]: never; })[] & { [K_31 in Exclude<keyof I["vrfSeeds"], keyof {
             account?: string | undefined;
             seed?: Uint8Array | undefined;
         }[]>]: never; }) | undefined;
-    } & { [K_31 in Exclude<keyof I, keyof GenesisState>]: never; }>(object: I): GenesisState;
+    } & { [K_32 in Exclude<keyof I, keyof GenesisState>]: never; }>(object: I): GenesisState;
 };
 type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
 export type DeepPartial<T> = T extends Builtin ? T : T extends Long ? string | number | Long : T extends Array<infer U> ? Array<DeepPartial<U>> : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>> : T extends {} ? {

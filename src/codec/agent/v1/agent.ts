@@ -9,8 +9,7 @@ export const protobufPackage = "agent.v1";
 
 export enum AgentStatus {
   AGENT_STATUS_ACTIVE = 0,
-  AGENT_STATUS_UPDATING = 1,
-  AGENT_STATUS_INACTIVE = 2,
+  AGENT_STATUS_INACTIVE = 1,
   UNRECOGNIZED = -1,
 }
 
@@ -20,9 +19,6 @@ export function agentStatusFromJSON(object: any): AgentStatus {
     case "AGENT_STATUS_ACTIVE":
       return AgentStatus.AGENT_STATUS_ACTIVE;
     case 1:
-    case "AGENT_STATUS_UPDATING":
-      return AgentStatus.AGENT_STATUS_UPDATING;
-    case 2:
     case "AGENT_STATUS_INACTIVE":
       return AgentStatus.AGENT_STATUS_INACTIVE;
     case -1:
@@ -36,8 +32,6 @@ export function agentStatusToJSON(object: AgentStatus): string {
   switch (object) {
     case AgentStatus.AGENT_STATUS_ACTIVE:
       return "AGENT_STATUS_ACTIVE";
-    case AgentStatus.AGENT_STATUS_UPDATING:
-      return "AGENT_STATUS_UPDATING";
     case AgentStatus.AGENT_STATUS_INACTIVE:
       return "AGENT_STATUS_INACTIVE";
     case AgentStatus.UNRECOGNIZED:
@@ -101,6 +95,10 @@ export interface Params {
   highestAgentVersion: Long;
 }
 
+export interface InnerValues {
+  seed: Uint8Array;
+}
+
 export interface Model {
   name: string;
   repositoryUrl: string;
@@ -113,6 +111,7 @@ export interface Prestige {
 
 export interface InferenceAgent {
   account: string;
+  modelName: string;
   url: string;
   lastHeartbeat?: Date;
   version: Long;
@@ -124,6 +123,7 @@ export interface InferenceAgent {
 export interface PaymentContribution {
   account: string;
   rate: Long;
+  amount?: Coin;
 }
 
 export interface Payment {
@@ -319,6 +319,65 @@ export const Params = {
   },
 };
 
+function createBaseInnerValues(): InnerValues {
+  return { seed: new Uint8Array() };
+}
+
+export const InnerValues = {
+  encode(
+    message: InnerValues,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    if (message.seed.length !== 0) {
+      writer.uint32(10).bytes(message.seed);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): InnerValues {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseInnerValues();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.seed = reader.bytes();
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): InnerValues {
+    return {
+      seed: isSet(object.seed)
+        ? bytesFromBase64(object.seed)
+        : new Uint8Array(),
+    };
+  },
+
+  toJSON(message: InnerValues): unknown {
+    const obj: any = {};
+    message.seed !== undefined &&
+      (obj.seed = base64FromBytes(
+        message.seed !== undefined ? message.seed : new Uint8Array()
+      ));
+    return obj;
+  },
+
+  fromPartial<I extends Exact<DeepPartial<InnerValues>, I>>(
+    object: I
+  ): InnerValues {
+    const message = createBaseInnerValues();
+    message.seed = object.seed ?? new Uint8Array();
+    return message;
+  },
+};
+
 function createBaseModel(): Model {
   return { name: "", repositoryUrl: "" };
 }
@@ -452,6 +511,7 @@ export const Prestige = {
 function createBaseInferenceAgent(): InferenceAgent {
   return {
     account: "",
+    modelName: "",
     url: "",
     lastHeartbeat: undefined,
     version: Long.UZERO,
@@ -469,26 +529,29 @@ export const InferenceAgent = {
     if (message.account !== "") {
       writer.uint32(10).string(message.account);
     }
+    if (message.modelName !== "") {
+      writer.uint32(18).string(message.modelName);
+    }
     if (message.url !== "") {
-      writer.uint32(18).string(message.url);
+      writer.uint32(26).string(message.url);
     }
     if (message.lastHeartbeat !== undefined) {
       Timestamp.encode(
         toTimestamp(message.lastHeartbeat),
-        writer.uint32(26).fork()
+        writer.uint32(34).fork()
       ).ldelim();
     }
     if (!message.version.isZero()) {
-      writer.uint32(32).uint64(message.version);
+      writer.uint32(40).uint64(message.version);
     }
     if (message.status !== 0) {
-      writer.uint32(40).int32(message.status);
+      writer.uint32(48).int32(message.status);
     }
     if (message.lockBalance !== undefined) {
-      Coin.encode(message.lockBalance, writer.uint32(50).fork()).ldelim();
+      Coin.encode(message.lockBalance, writer.uint32(58).fork()).ldelim();
     }
     if (message.prestige !== undefined) {
-      Prestige.encode(message.prestige, writer.uint32(58).fork()).ldelim();
+      Prestige.encode(message.prestige, writer.uint32(66).fork()).ldelim();
     }
     return writer;
   },
@@ -504,23 +567,26 @@ export const InferenceAgent = {
           message.account = reader.string();
           break;
         case 2:
-          message.url = reader.string();
+          message.modelName = reader.string();
           break;
         case 3:
+          message.url = reader.string();
+          break;
+        case 4:
           message.lastHeartbeat = fromTimestamp(
             Timestamp.decode(reader, reader.uint32())
           );
           break;
-        case 4:
+        case 5:
           message.version = reader.uint64() as Long;
           break;
-        case 5:
+        case 6:
           message.status = reader.int32() as any;
           break;
-        case 6:
+        case 7:
           message.lockBalance = Coin.decode(reader, reader.uint32());
           break;
-        case 7:
+        case 8:
           message.prestige = Prestige.decode(reader, reader.uint32());
           break;
         default:
@@ -534,6 +600,7 @@ export const InferenceAgent = {
   fromJSON(object: any): InferenceAgent {
     return {
       account: isSet(object.account) ? String(object.account) : "",
+      modelName: isSet(object.modelName) ? String(object.modelName) : "",
       url: isSet(object.url) ? String(object.url) : "",
       lastHeartbeat: isSet(object.lastHeartbeat)
         ? fromJsonTimestamp(object.lastHeartbeat)
@@ -554,6 +621,7 @@ export const InferenceAgent = {
   toJSON(message: InferenceAgent): unknown {
     const obj: any = {};
     message.account !== undefined && (obj.account = message.account);
+    message.modelName !== undefined && (obj.modelName = message.modelName);
     message.url !== undefined && (obj.url = message.url);
     message.lastHeartbeat !== undefined &&
       (obj.lastHeartbeat = message.lastHeartbeat.toISOString());
@@ -577,6 +645,7 @@ export const InferenceAgent = {
   ): InferenceAgent {
     const message = createBaseInferenceAgent();
     message.account = object.account ?? "";
+    message.modelName = object.modelName ?? "";
     message.url = object.url ?? "";
     message.lastHeartbeat = object.lastHeartbeat ?? undefined;
     message.version =
@@ -597,7 +666,7 @@ export const InferenceAgent = {
 };
 
 function createBasePaymentContribution(): PaymentContribution {
-  return { account: "", rate: Long.UZERO };
+  return { account: "", rate: Long.UZERO, amount: undefined };
 }
 
 export const PaymentContribution = {
@@ -610,6 +679,9 @@ export const PaymentContribution = {
     }
     if (!message.rate.isZero()) {
       writer.uint32(16).uint64(message.rate);
+    }
+    if (message.amount !== undefined) {
+      Coin.encode(message.amount, writer.uint32(26).fork()).ldelim();
     }
     return writer;
   },
@@ -627,6 +699,9 @@ export const PaymentContribution = {
         case 2:
           message.rate = reader.uint64() as Long;
           break;
+        case 3:
+          message.amount = Coin.decode(reader, reader.uint32());
+          break;
         default:
           reader.skipType(tag & 7);
           break;
@@ -639,6 +714,7 @@ export const PaymentContribution = {
     return {
       account: isSet(object.account) ? String(object.account) : "",
       rate: isSet(object.rate) ? Long.fromValue(object.rate) : Long.UZERO,
+      amount: isSet(object.amount) ? Coin.fromJSON(object.amount) : undefined,
     };
   },
 
@@ -647,6 +723,8 @@ export const PaymentContribution = {
     message.account !== undefined && (obj.account = message.account);
     message.rate !== undefined &&
       (obj.rate = (message.rate || Long.UZERO).toString());
+    message.amount !== undefined &&
+      (obj.amount = message.amount ? Coin.toJSON(message.amount) : undefined);
     return obj;
   },
 
@@ -659,6 +737,10 @@ export const PaymentContribution = {
       object.rate !== undefined && object.rate !== null
         ? Long.fromValue(object.rate)
         : Long.UZERO;
+    message.amount =
+      object.amount !== undefined && object.amount !== null
+        ? Coin.fromPartial(object.amount)
+        : undefined;
     return message;
   },
 };

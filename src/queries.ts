@@ -21,7 +21,7 @@ export interface AgentExtension {
     readonly modelRequest: (name: string) => Promise<QueryModelResponse>;
     readonly modelRequestAll: (key: Uint8Array, offset: Long, limit: Long, countTotal: boolean, reverse: boolean) => Promise<QueryModelAllResponse>;
     readonly params: () => Promise<QueryParamsResponse>;
-    readonly inferenceAgentRequest: (account: string) => Promise<QueryInferenceAgentResponse>;
+    readonly inferenceAgentRequest: (account: string, modelName: string, limit: Long) => Promise<QueryInferenceAgentResponse>;
     readonly sessionRequest: (id: string) => Promise<QuerySessionResponse>;
     readonly sessionByAgentRequest: (account: string, status: SessionStatus, limit: Long, orderDesc: boolean, expireTime?: Date) => Promise<QuerySessionByAgentResponse>;
     readonly VRFSeedRequest: (account: string) => Promise<QueryVRFSeedResponse>;
@@ -43,8 +43,8 @@ export function setupAgentExtension(base: QueryClient): AgentExtension{
       params: async () => {
         return await agentQueryService.Params({});
       },
-      inferenceAgentRequest: async (account: string) => {
-        return await agentQueryService.InferenceAgentRequest({ account });
+      inferenceAgentRequest: async (account: string, modelName: string, limit: Long) => {
+        return await agentQueryService.InferenceAgentRequest({ account, modelName, limit });
       },
       sessionRequest: async (id: string) => {
         return await agentQueryService.SessionRequest({ id });

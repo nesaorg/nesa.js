@@ -1,5 +1,12 @@
 /* eslint-disable */
-import { Params, Model, InferenceAgent, Session, VrfSeed } from "./agent";
+import {
+  Params,
+  InnerValues,
+  Model,
+  InferenceAgent,
+  Session,
+  VrfSeed,
+} from "./agent";
 import Long from "long";
 import _m0 from "protobufjs/minimal";
 
@@ -7,8 +14,8 @@ export const protobufPackage = "agent.v1";
 
 export interface GenesisState {
   params?: Params;
+  innerValues?: InnerValues;
   models: Model[];
-  startingAgentId: Long;
   agents: InferenceAgent[];
   sessions: Session[];
   vrfSeeds: VrfSeed[];
@@ -17,8 +24,8 @@ export interface GenesisState {
 function createBaseGenesisState(): GenesisState {
   return {
     params: undefined,
+    innerValues: undefined,
     models: [],
-    startingAgentId: Long.UZERO,
     agents: [],
     sessions: [],
     vrfSeeds: [],
@@ -33,11 +40,14 @@ export const GenesisState = {
     if (message.params !== undefined) {
       Params.encode(message.params, writer.uint32(10).fork()).ldelim();
     }
-    for (const v of message.models) {
-      Model.encode(v!, writer.uint32(18).fork()).ldelim();
+    if (message.innerValues !== undefined) {
+      InnerValues.encode(
+        message.innerValues,
+        writer.uint32(18).fork()
+      ).ldelim();
     }
-    if (!message.startingAgentId.isZero()) {
-      writer.uint32(24).uint64(message.startingAgentId);
+    for (const v of message.models) {
+      Model.encode(v!, writer.uint32(26).fork()).ldelim();
     }
     for (const v of message.agents) {
       InferenceAgent.encode(v!, writer.uint32(34).fork()).ldelim();
@@ -62,10 +72,10 @@ export const GenesisState = {
           message.params = Params.decode(reader, reader.uint32());
           break;
         case 2:
-          message.models.push(Model.decode(reader, reader.uint32()));
+          message.innerValues = InnerValues.decode(reader, reader.uint32());
           break;
         case 3:
-          message.startingAgentId = reader.uint64() as Long;
+          message.models.push(Model.decode(reader, reader.uint32()));
           break;
         case 4:
           message.agents.push(InferenceAgent.decode(reader, reader.uint32()));
@@ -87,12 +97,12 @@ export const GenesisState = {
   fromJSON(object: any): GenesisState {
     return {
       params: isSet(object.params) ? Params.fromJSON(object.params) : undefined,
+      innerValues: isSet(object.innerValues)
+        ? InnerValues.fromJSON(object.innerValues)
+        : undefined,
       models: Array.isArray(object?.models)
         ? object.models.map((e: any) => Model.fromJSON(e))
         : [],
-      startingAgentId: isSet(object.startingAgentId)
-        ? Long.fromValue(object.startingAgentId)
-        : Long.UZERO,
       agents: Array.isArray(object?.agents)
         ? object.agents.map((e: any) => InferenceAgent.fromJSON(e))
         : [],
@@ -109,15 +119,15 @@ export const GenesisState = {
     const obj: any = {};
     message.params !== undefined &&
       (obj.params = message.params ? Params.toJSON(message.params) : undefined);
+    message.innerValues !== undefined &&
+      (obj.innerValues = message.innerValues
+        ? InnerValues.toJSON(message.innerValues)
+        : undefined);
     if (message.models) {
       obj.models = message.models.map((e) => (e ? Model.toJSON(e) : undefined));
     } else {
       obj.models = [];
     }
-    message.startingAgentId !== undefined &&
-      (obj.startingAgentId = (
-        message.startingAgentId || Long.UZERO
-      ).toString());
     if (message.agents) {
       obj.agents = message.agents.map((e) =>
         e ? InferenceAgent.toJSON(e) : undefined
@@ -150,11 +160,11 @@ export const GenesisState = {
       object.params !== undefined && object.params !== null
         ? Params.fromPartial(object.params)
         : undefined;
+    message.innerValues =
+      object.innerValues !== undefined && object.innerValues !== null
+        ? InnerValues.fromPartial(object.innerValues)
+        : undefined;
     message.models = object.models?.map((e) => Model.fromPartial(e)) || [];
-    message.startingAgentId =
-      object.startingAgentId !== undefined && object.startingAgentId !== null
-        ? Long.fromValue(object.startingAgentId)
-        : Long.UZERO;
     message.agents =
       object.agents?.map((e) => InferenceAgent.fromPartial(e)) || [];
     message.sessions =

@@ -105,7 +105,6 @@ class EncryptUtils {
         : signature.v.toString();
     sigV = sigV.length < 2 ? `0${sigV}` : sigV;
     const signatureData = `${signature.r}${signature.s}${sigV}`;
-    console.log('signatureData: ', signatureData)
     return signatureData;
   }
 }
