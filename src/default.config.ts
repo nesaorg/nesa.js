@@ -7,8 +7,8 @@ const defaultChainInfo: ChainInfo = {
     chainName: "Nesa Testnet dev 2",
     chainSymbolImageUrl:
         "https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/nesa/chain.png",
-    rpc: "http://156.249.28.51:11007",
-    rest: "http://156.249.28.51:9032",
+    rpc: "https://cosmos-rpc.tpblock.io",
+    rest: "https://cosmos-rest.tpblock.io",
     nodeProvider: {
         name: "Nesa",
         email: "dev@nesa.ai",
