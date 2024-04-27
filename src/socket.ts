@@ -11,7 +11,7 @@ interface ISocket {
         ws_url: string,
         onopen: () => void;
         onclose?: (e: Event) => void;
-        onerror?: (e: Event) => void;
+        onerror?: (e: Event | Error) => void;
     }) => (WebSocket | null | undefined),
     heartbeat: Function,
     send: (data: any, callback?: Function) => void
@@ -34,8 +34,13 @@ export const socket: ISocket = {
         socket.web_socket.onopen = () => {
             socket.socket_open = true;
             socket.ever_succeeded = true;
-            socket.heartbeat();
-            handle?.onopen && handle.onopen()
+            this.signatureData = EncryptUtils.signHeartbeat("hello")
+            if (this.signatureData === "") {
+                handle?.onerror && handle?.onerror(new Error('SignatureData is null'))
+            } else {
+                socket.heartbeat();
+                handle?.onopen && handle.onopen()
+            }
         }
         socket.web_socket.onclose = (e) => {
             if (socket.ever_succeeded) {
@@ -58,20 +63,10 @@ export const socket: ISocket = {
             clearInterval(socket.heartbeat_timer);
         }
         socket.heartbeat_timer = setInterval(() => {
-            let send_data
-            if (this.signatureData) {
-                send_data = {
-                    "message": "hello",
-                    "signature_message": this.signatureData
-                }
-            } else {
-                this.signatureData = EncryptUtils.signHeartbeat("hello")
-                send_data = {
-                    "message": "hello",
-                    "signature_message": this.signatureData
-                }
-            }
-            socket.send(send_data);
+            socket.send({
+                "message": "hello",
+                "signature_message": this.signatureData
+            });
         }, socket.heartbeat_interval)
     },
 

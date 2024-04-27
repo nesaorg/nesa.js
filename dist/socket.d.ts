@@ -10,7 +10,7 @@ interface ISocket {
         ws_url: string;
         onopen: () => void;
         onclose?: (e: Event) => void;
-        onerror?: (e: Event) => void;
+        onerror?: (e: Event | Error) => void;
     }) => (WebSocket | null | undefined);
     heartbeat: Function;
     send: (data: any, callback?: Function) => void;
