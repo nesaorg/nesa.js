@@ -60,9 +60,9 @@ Return Code and message
 
 ```
 Path: Settings -> Advanced -> Modify connection point
-Choose: Cosmos Hub Testnet, set
-RPC: http://156.249.28.51:11007
-LCD: http://156.249.28.51:9032
+Choose: Nesa Testnet dev 2, set
+RPC: https://cosmos-rpc.tpblock.io
+LCD: https://cosmos-rest.tpblock.io
 
 ```
 
@@ -73,7 +73,7 @@ import { ChatClient } from 'nesa-sdk';
 
 const ChatUtils = new ChatClient({
     modelName: "meta-llama/Llama-2-13b-hf",  // At this stage, "meta-llama/Llama-2-13b-hf" must be filled in
-    chainInfo: ChainInfo // optional, The current chain information is the rpc address : "http://156.249.28.51:11007",
+    chainInfo: ChainInfo // optional, The current chain information is the rpc address : "https://cosmos-rpc.tpblock.io",
     lockAmount: lockAmount // optional, default is 1000
   })
 
