@@ -3,12 +3,12 @@ const defaultAgentUrl = "wss://agent.nesa.ai/pingws";
 const defaultLockAmount = '1000'
 const sdkVersion = '1.0.0'
 const defaultChainInfo: ChainInfo = {
-    chainId: "nesa-testnet-2",
-    chainName: "Nesa Testnet dev 2",
+    chainId: 'nesa-testnet-3',
+    chainName: 'Nesa Testnet',
     chainSymbolImageUrl:
         "https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/nesa/chain.png",
-    rpc: "https://cosmos-rpc.tpblock.io",
-    rest: "https://cosmos-rest.tpblock.io",
+    rest: 'https://lcd.test.nesa.ai',
+    rpc: 'https://rpc.test.nesa.ai',
     nodeProvider: {
         name: "Nesa",
         email: "dev@nesa.ai",
