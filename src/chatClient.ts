@@ -56,7 +56,10 @@ class ChatClient {
       const ws = new WebSocket(this.agentUrl);
       ws.addEventListener("open", () => {
         if (ws.readyState === 1) {
-          const questionStr = JSON.stringify(question);
+          const questionStr = JSON.stringify({
+            ...question,
+            stream: true,
+          });
           if (question.messages && this.assistantRoleName) {
             question.messages = question.messages.map((item: any) => {
               if (item.role === 'assistant') {
