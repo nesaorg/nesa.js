@@ -57,8 +57,8 @@ class ChatClient {
       ws.addEventListener("open", () => {
         if (ws.readyState === 1) {
           const questionStr = JSON.stringify({
-            ...question,
             stream: true,
+            ...question,
           });
           if (question.messages && this.assistantRoleName) {
             question.messages = question.messages.map((item: any) => {
