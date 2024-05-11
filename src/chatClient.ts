@@ -203,66 +203,71 @@ class ChatClient {
       } else if (!this.lockAmount || new BigNumber(this.lockAmount).isNaN()) {
         reject(new Error("LockAmount invalid value"))
       } else {
-        WalletOperation.requestParams(this.chainInfo)
-          .then((params) => {
-            if (params && params?.params) {
-              if (new BigNumber(this.lockAmount).isLessThan(params?.params?.userMinimumLock?.amount)) {
-                reject(new Error("LockAmount cannot be less than " + params?.params?.userMinimumLock?.amount))
-              } else {
-                WalletOperation.registerSession(this.modelName, this.lockAmount, params?.params?.userMinimumLock?.denom, this.chainInfo)
-                  .then((result: any) => {
-                    console.log('registerSession-result: ', result)
-                    if (result?.transactionHash) {
-                      WalletOperation.requestAgentInfo(result?.account, this.modelName, this.chainInfo)
-                        .then((agentInfo: any) => {
-                          console.log('agentInfo: ', agentInfo)
-                          if (agentInfo && agentInfo?.inferenceAgents?.length > 0) {
-                            const selectAgent = agentInfo?.inferenceAgents[0]
-                            let agentWsUrl = selectAgent.url
-                            let agentHeartbeatUrl = selectAgent.url
-                            if (selectAgent.url?.endsWith("/")) {
-                              agentWsUrl = agentWsUrl + 'chat';
-                              agentHeartbeatUrl = agentHeartbeatUrl + 'heartbeat';
-                            } else {
-                              agentWsUrl = agentWsUrl + '/chat';
-                              agentHeartbeatUrl = agentHeartbeatUrl + '/heartbeat';
-                            }
-                            socket.init({
-                              ws_url: agentHeartbeatUrl,
-                              onopen: () => {
-                                this.agentUrl = agentWsUrl;
+        WalletOperation.getNesaClient(this.chainInfo)
+          .then((nesaClient) => {
+            WalletOperation.requestParams(nesaClient)
+              .then((params) => {
+                if (params && params?.params) {
+                  if (new BigNumber(this.lockAmount).isLessThan(params?.params?.userMinimumLock?.amount)) {
+                    reject(new Error("LockAmount cannot be less than " + params?.params?.userMinimumLock?.amount))
+                  } else {
+                    WalletOperation.registerSession(nesaClient, this.modelName, this.lockAmount, params?.params?.userMinimumLock?.denom, this.chainInfo)
+                      .then((result: any) => {
+                        console.log('registerSession-result: ', result)
+                        if (result?.transactionHash) {
+                          WalletOperation.requestAgentInfo(nesaClient, result?.account, this.modelName)
+                            .then((agentInfo: any) => {
+                              console.log('agentInfo: ', agentInfo)
+                              if (agentInfo && agentInfo?.inferenceAgents?.length > 0) {
+                                const selectAgent = agentInfo?.inferenceAgents[0]
+                                let agentWsUrl = selectAgent.url
+                                let agentHeartbeatUrl = selectAgent.url
+                                if (selectAgent.url?.endsWith("/")) {
+                                  agentWsUrl = agentWsUrl + 'chat';
+                                  agentHeartbeatUrl = agentHeartbeatUrl + 'heartbeat';
+                                } else {
+                                  agentWsUrl = agentWsUrl + '/chat';
+                                  agentHeartbeatUrl = agentHeartbeatUrl + '/heartbeat';
+                                }
+                                socket.init({
+                                  ws_url: agentHeartbeatUrl,
+                                  onopen: () => {
+                                    this.agentUrl = agentWsUrl;
+                                    this.isRegisterSessioning = false;
+                                    resolve(result);
+                                  },
+                                  onerror: () => {
+                                    reject(new Error("Agent heartbeat packet connection failed"));
+                                  }
+                                });
+                              } else {
                                 this.isRegisterSessioning = false;
-                                resolve(result);
-                              },
-                              onerror: () => {
-                                reject(new Error("Agent heartbeat packet connection failed"));
+                                reject(new Error("No agent found"))
                               }
-                            });
-                          } else {
-                            this.isRegisterSessioning = false;
-                            reject(new Error("No agent found"))
-                          }
-                        })
-                        .catch((error) => {
-                          console.log("requestAgentInfoError: ", error);
-                          reject(error);
-                        })
-                    } else {
-                      this.isRegisterSessioning = false;
-                      reject(result);
-                    }
-                  })
-                  .catch((error) => {
-                    console.log("registerSessionError: ", error);
-                    this.isRegisterSessioning = false;
-                    reject(error);
-                  });
-              }
-            } else {
-              reject(new Error("Chain configuration loading failed."))
-            }
-          })
-          .catch((error) => {
+                            })
+                            .catch((error) => {
+                              console.log("requestAgentInfoError: ", error);
+                              reject(error);
+                            })
+                        } else {
+                          this.isRegisterSessioning = false;
+                          reject(result);
+                        }
+                      })
+                      .catch((error) => {
+                        console.log("registerSessionError: ", error);
+                        this.isRegisterSessioning = false;
+                        reject(error);
+                      });
+                  }
+                } else {
+                  reject(new Error("Chain configuration loading failed."))
+                }
+              })
+              .catch((error) => {
+                reject(error)
+              })
+          }).catch((error) => {
             reject(error)
           })
       }

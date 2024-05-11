@@ -6,8 +6,7 @@ import EncryptUtils from "./encryptUtils";
 import Long from "long";
 
 class WalletOperation {
-  static registerSession(modelName: string, lockAmount: string, denom: string, chainInfo: ChainInfo): Promise<any> {
-    EncryptUtils.generateKey();
+  static getNesaClient(chainInfo: ChainInfo): Promise<any> {
     return new Promise(async (resolve, reject) => {
       if (window?.keplr) {
         const { keplr } = window;
@@ -16,7 +15,7 @@ class WalletOperation {
         await keplr.enable(chainId);
         const offlineSigner = window.getOfflineSigner!(chainId);
         const account: AccountData = (await offlineSigner.getAccounts())[0];
-        const nesaClient = await NesaClient.connectWithSigner(
+        NesaClient.connectWithSigner(
           rpc,
           offlineSigner,
           account.address,
@@ -27,17 +26,10 @@ class WalletOperation {
             estimatedBlockTime: 6,
             estimatedIndexerTime: 5,
           }
-        );
-        const lockBalance = { denom: denom, amount: lockAmount };
-        EncryptUtils.requestVrf(chainInfo).then(async (res) => {
-          if (res?.vrf && res?.sessionId) {
-            resolve(nesaClient.registerSession(res.sessionId, modelName, lockBalance, res.vrf))
-          } else {
-            reject(new Error('Vrf seed is null'))
-          }
-        }).catch((err) => {
-          console.log('res-err: ', err)
-          reject(err)
+        ).then((client) => {
+          resolve(client)
+        }).catch((error) => {
+          reject(error)
         })
       } else {
         reject(new Error("Keplr Wallet plugin not found"));
@@ -45,105 +37,58 @@ class WalletOperation {
     })
   }
 
-  static requestAgentInfo(agentName: string, modelName: string, chainInfo: ChainInfo): Promise<any> {
+  static registerSession(client: any, modelName: string, lockAmount: string, denom: string, chainInfo: ChainInfo): Promise<any> {
+    EncryptUtils.generateKey();
+    return new Promise(async (resolve, reject) => {
+      const lockBalance = { denom: denom, amount: lockAmount };
+      EncryptUtils.requestVrf(client, chainInfo).then(async (res) => {
+        if (res?.vrf && res?.sessionId) {
+          resolve(client.registerSession(res.sessionId, modelName, lockBalance, res.vrf))
+        } else {
+          reject(new Error('Vrf seed is null'))
+        }
+      })
+    })
+  }
+
+  static requestAgentInfo(client: any, agentName: string, modelName: string): Promise<any> {
     return new Promise(async (resolve, reject) => {
       if (window?.keplr) {
-        const { keplr } = window;
-        const { chainId, rpc } = chainInfo;
-        await keplr.experimentalSuggestChain(chainInfo);
-        await keplr.enable(chainId);
-        const offlineSigner = window.getOfflineSigner!(chainId);
-        const account: AccountData = (await offlineSigner.getAccounts())[0];
-        NesaClient.connectWithSigner(
-          rpc,
-          offlineSigner,
-          account.address,
-          {
-            gasPrice: GasPrice.fromString(
-              `0.025${chainInfo.feeCurrencies[0].coinMinimalDenom}`
-            ),
-            estimatedBlockTime: 6,
-            estimatedIndexerTime: 5,
-          }
-        ).then((client) => {
-          if (client) {
-            resolve(client.getInferenceAgent(agentName, modelName, Long.fromNumber(0)))
-          } else {
-            reject("Client init failed");
-          }
-        }).catch((err) => {
-          reject("Client init failed: " + err?.message);
-        })
+        if (client) {
+          resolve(client.getInferenceAgent(agentName, modelName, Long.fromNumber(0)))
+        } else {
+          reject("Client init failed");
+        }
       } else {
         reject("Keplr Wallet plugin not found");
       }
     })
   }
 
-  static requestParams(chainInfo: ChainInfo): Promise<any> {
+  static requestParams(client: any): Promise<any> {
     return new Promise(async (resolve, reject) => {
       if (window?.keplr) {
-        const { keplr } = window;
-        const { chainId, rpc } = chainInfo;
-        await keplr.experimentalSuggestChain(chainInfo);
-        await keplr.enable(chainInfo.chainId);
-        const offlineSigner = window.getOfflineSigner!(chainId);
-        const account: AccountData = (await offlineSigner.getAccounts())[0];
-        NesaClient.connectWithSigner(
-          rpc,
-          offlineSigner,
-          account.address,
-          {
-            gasPrice: GasPrice.fromString(
-              `0.025${chainInfo.feeCurrencies[0].coinMinimalDenom}`
-            ),
-            estimatedBlockTime: 6,
-            estimatedIndexerTime: 5,
-          }
-        ).then((client) => {
-          if (client) {
-            resolve(client.getParams())
-          } else {
-            reject("Client init failed");
-          }
-        }).catch((err) => {
-          reject("Client init failed: " + err?.message);
-        })
+        if (client) {
+          resolve(client.getParams())
+        } else {
+          reject("Client init failed");
+        }
       } else {
         reject("Keplr Wallet plugin not found");
       }
     })
   }
 
-  static requestVrfSeed(chainInfo: ChainInfo): Promise<any> {
+  static requestVrfSeed(client: any, chainInfo: ChainInfo): Promise<any> {
     return new Promise(async (resolve, reject) => {
       if (window?.keplr) {
         const { keplr } = window;
-        const { chainId, rpc } = chainInfo;
+        const { chainId } = chainInfo;
         await keplr.experimentalSuggestChain(chainInfo);
         await keplr.enable(chainId);
         const offlineSigner = window.getOfflineSigner!(chainId);
         const account: AccountData = (await offlineSigner.getAccounts())[0];
-        NesaClient.connectWithSigner(
-          rpc,
-          offlineSigner,
-          account.address,
-          {
-            gasPrice: GasPrice.fromString(
-              `0.025${chainInfo.feeCurrencies[0].coinMinimalDenom}`
-            ),
-            estimatedBlockTime: 6,
-            estimatedIndexerTime: 5,
-          }
-        ).then((client) => {
-          if (client) {
-            resolve(client.getVRFSeed(account.address))
-          } else {
-            reject("Client init failed");
-          }
-        }).catch((err) => {
-          reject("Client init failed: " + err?.message);
-        })
+        resolve(client.getVRFSeed(account.address))
       } else {
         reject("Keplr Wallet plugin not found");
       }
