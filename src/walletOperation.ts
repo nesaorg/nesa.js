@@ -2,31 +2,18 @@ import { AccountData } from "@cosmjs/proto-signing";
 import { NesaClient } from "./client";
 import { GasPrice } from "@cosmjs/stargate";
 import { ChainInfo } from "@keplr-wallet/types"
-import { defaultChainInfo } from "./default.config";
 import EncryptUtils from "./encryptUtils";
 import Long from "long";
 
 class WalletOperation {
-  static registerSession(modelName: string, lockAmount: string, denom: string, chainInfo?: ChainInfo): Promise<any> {
+  static registerSession(modelName: string, lockAmount: string, denom: string, chainInfo: ChainInfo): Promise<any> {
     EncryptUtils.generateKey();
     return new Promise(async (resolve, reject) => {
-      let selectChainInfo = defaultChainInfo;
-      if (chainInfo) {
-        if (chainInfo?.rpc
-          && chainInfo?.rest
-          && chainInfo?.feeCurrencies
-          && chainInfo?.feeCurrencies.length > 0
-          && chainInfo?.feeCurrencies[0]?.coinMinimalDenom) {
-          selectChainInfo = chainInfo
-        } else {
-          reject("Invalid chainInfo, you must provide rpc, rest, feeCurrencies, feeCurrencies");
-        }
-      }
       if (window?.keplr) {
         const { keplr } = window;
-        const { chainId, rpc } = selectChainInfo;
-        await keplr.experimentalSuggestChain(selectChainInfo);
-        await keplr.enable(selectChainInfo.chainId);
+        const { chainId, rpc } = chainInfo;
+        await keplr.experimentalSuggestChain(chainInfo);
+        await keplr.enable(chainId);
         const offlineSigner = window.getOfflineSigner!(chainId);
         const account: AccountData = (await offlineSigner.getAccounts())[0];
         const nesaClient = await NesaClient.connectWithSigner(
@@ -35,14 +22,14 @@ class WalletOperation {
           account.address,
           {
             gasPrice: GasPrice.fromString(
-              `0.025${selectChainInfo.feeCurrencies[0].coinMinimalDenom}`
+              `0.025${chainInfo.feeCurrencies[0].coinMinimalDenom}`
             ),
             estimatedBlockTime: 6,
             estimatedIndexerTime: 5,
           }
         );
         const lockBalance = { denom: denom, amount: lockAmount };
-        EncryptUtils.requestVrf().then(async (res) => {
+        EncryptUtils.requestVrf(chainInfo).then(async (res) => {
           if (res?.vrf && res?.sessionId) {
             resolve(nesaClient.registerSession(res.sessionId, modelName, lockBalance, res.vrf))
           } else {
@@ -58,23 +45,13 @@ class WalletOperation {
     })
   }
 
-  static requestAgentInfo(agentName: string, modelName: string, chainInfo?: ChainInfo): Promise<any> {
+  static requestAgentInfo(agentName: string, modelName: string, chainInfo: ChainInfo): Promise<any> {
     return new Promise(async (resolve, reject) => {
-      let selectChainInfo = defaultChainInfo;
-      if (chainInfo) {
-        if (chainInfo?.feeCurrencies[0]?.coinMinimalDenom) {
-          selectChainInfo = chainInfo
-        } else {
-          reject("Invalid chainInfo, you must provide feeCurrencies");
-        }
-      } else {
-        selectChainInfo = defaultChainInfo
-      }
       if (window?.keplr) {
         const { keplr } = window;
-        const { chainId, rpc } = selectChainInfo;
-        await keplr.experimentalSuggestChain(selectChainInfo);
-        await keplr.enable(selectChainInfo.chainId);
+        const { chainId, rpc } = chainInfo;
+        await keplr.experimentalSuggestChain(chainInfo);
+        await keplr.enable(chainId);
         const offlineSigner = window.getOfflineSigner!(chainId);
         const account: AccountData = (await offlineSigner.getAccounts())[0];
         NesaClient.connectWithSigner(
@@ -83,7 +60,7 @@ class WalletOperation {
           account.address,
           {
             gasPrice: GasPrice.fromString(
-              `0.025${selectChainInfo.feeCurrencies[0].coinMinimalDenom}`
+              `0.025${chainInfo.feeCurrencies[0].coinMinimalDenom}`
             ),
             estimatedBlockTime: 6,
             estimatedIndexerTime: 5,
@@ -103,23 +80,13 @@ class WalletOperation {
     })
   }
 
-  static requestParams(chainInfo?: ChainInfo): Promise<any> {
+  static requestParams(chainInfo: ChainInfo): Promise<any> {
     return new Promise(async (resolve, reject) => {
-      let selectChainInfo = defaultChainInfo;
-      if (chainInfo) {
-        if (chainInfo?.feeCurrencies[0]?.coinMinimalDenom) {
-          selectChainInfo = chainInfo
-        } else {
-          reject("Invalid chainInfo, you must provide feeCurrencies");
-        }
-      } else {
-        selectChainInfo = defaultChainInfo
-      }
       if (window?.keplr) {
         const { keplr } = window;
-        const { chainId, rpc } = selectChainInfo;
-        await keplr.experimentalSuggestChain(selectChainInfo);
-        await keplr.enable(selectChainInfo.chainId);
+        const { chainId, rpc } = chainInfo;
+        await keplr.experimentalSuggestChain(chainInfo);
+        await keplr.enable(chainInfo.chainId);
         const offlineSigner = window.getOfflineSigner!(chainId);
         const account: AccountData = (await offlineSigner.getAccounts())[0];
         NesaClient.connectWithSigner(
@@ -128,7 +95,7 @@ class WalletOperation {
           account.address,
           {
             gasPrice: GasPrice.fromString(
-              `0.025${selectChainInfo.feeCurrencies[0].coinMinimalDenom}`
+              `0.025${chainInfo.feeCurrencies[0].coinMinimalDenom}`
             ),
             estimatedBlockTime: 6,
             estimatedIndexerTime: 5,
@@ -148,23 +115,13 @@ class WalletOperation {
     })
   }
 
-  static requestVrfSeed(chainInfo?: ChainInfo): Promise<any> {
+  static requestVrfSeed(chainInfo: ChainInfo): Promise<any> {
     return new Promise(async (resolve, reject) => {
-      let selectChainInfo = defaultChainInfo;
-      if (chainInfo) {
-        if (chainInfo?.feeCurrencies[0]?.coinMinimalDenom) {
-          selectChainInfo = chainInfo
-        } else {
-          reject("Invalid chainInfo, you must provide feeCurrencies");
-        }
-      } else {
-        selectChainInfo = defaultChainInfo
-      }
       if (window?.keplr) {
         const { keplr } = window;
-        const { chainId, rpc } = selectChainInfo;
-        await keplr.experimentalSuggestChain(selectChainInfo);
-        await keplr.enable(selectChainInfo.chainId);
+        const { chainId, rpc } = chainInfo;
+        await keplr.experimentalSuggestChain(chainInfo);
+        await keplr.enable(chainId);
         const offlineSigner = window.getOfflineSigner!(chainId);
         const account: AccountData = (await offlineSigner.getAccounts())[0];
         NesaClient.connectWithSigner(
@@ -173,7 +130,7 @@ class WalletOperation {
           account.address,
           {
             gasPrice: GasPrice.fromString(
-              `0.025${selectChainInfo.feeCurrencies[0].coinMinimalDenom}`
+              `0.025${chainInfo.feeCurrencies[0].coinMinimalDenom}`
             ),
             estimatedBlockTime: 6,
             estimatedIndexerTime: 5,

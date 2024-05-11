@@ -21,8 +21,8 @@ npm link nesa-sdk
 import { ChatClient } from 'nesa-sdk';
 const ChatUtils = new ChatClient({
   modelName: "",  //  model name
-  lockAmount: "", //  lock amount , default 1000
-  chainInfo: {} //  Refer to the defaultChainInfo format in src/default.config.ts
+  lockAmount: "", //  optional. lock amount , default 1000
+  chainInfo: {}   //  optional. chainInfo , Refer to the defaultChainInfo format in src/default.config.ts
 })
 ```
 
@@ -72,8 +72,8 @@ LCD: https://lcd.test.nesa.ai
 import { ChatClient } from 'nesa-sdk';
 
 const ChatUtils = new ChatClient({
-    modelName: "meta-llama/Llama-2-13b-hf",  // At this stage, "meta-llama/Llama-2-13b-hf" must be filled in
-    chainInfo: ChainInfo // optional, The current chain information is the rpc address : "https://rpc.test.nesa.ai",
+    modelName: "",
+    chainInfo: ChainInfo // optional, The default chain config is src/default.config.ts,
     lockAmount: lockAmount // optional, default is 1000
   })
 
@@ -105,6 +105,7 @@ ChatUtils.requestChat({
     {'role': 'assistant', 'content': 'assistant answer 2'},
     ...
   ],
+  "model": "",  //  model name
   // you can add other hyperparameter,like:
   "frequency_penalty": 0.5,
 })
