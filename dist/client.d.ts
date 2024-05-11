@@ -34,7 +34,7 @@ export declare class NesaClient {
     readonly chainId: string;
     readonly estimatedBlockTime: number;
     readonly estimatedIndexerTime: number;
-    static connectWithSigner(endpoint: string, signer: OfflineSigner, senderAddress: string, options: NesaClientOptions): Promise<NesaClient>;
+    static connectWithSigner(endpoint: string, signer: OfflineSigner, senderAddress: string, chainId: string | undefined, options: NesaClientOptions): Promise<NesaClient>;
     private constructor();
     updateParams(authority: string, params: Params): Promise<MsgResult>;
     registerModel(name: string, repositoryUrl: string): Promise<MsgResult>;

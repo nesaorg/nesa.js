@@ -85,19 +85,22 @@ export class NesaClient{
     endpoint: string,
     signer: OfflineSigner,
     senderAddress: string,
+    chainId: string | undefined,
     options: NesaClientOptions
   ): Promise<NesaClient> {
     const mergedOptions = {
       ...options,
       registry: nesaRegistry(),
     };
-    const signingClient = await SigningStargateClient.connectWithSigner(
-      endpoint,
+    const tmClient = await connectComet(endpoint);
+    const signingClient = await SigningStargateClient.createWithSigner(
+      tmClient,
       signer,
       mergedOptions
     );
-    const tmClient = await connectComet(endpoint);
-    const chainId = await signingClient.getChainId();
+    if(!chainId){
+      chainId = await signingClient.getChainId();
+    }
     return new NesaClient(
       signingClient,
       tmClient,

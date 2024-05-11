@@ -19,6 +19,7 @@ class WalletOperation {
           rpc,
           offlineSigner,
           account.address,
+          chainId,
           {
             gasPrice: GasPrice.fromString(
               `0.025${chainInfo.feeCurrencies[0].coinMinimalDenom}`
