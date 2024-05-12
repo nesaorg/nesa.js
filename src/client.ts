@@ -34,6 +34,10 @@ import {
   QuerySessionByAgentResponse,
   QueryVRFSeedResponse
 } from "./codec/agent/v1/query";
+import { StdFee } from "@cosmjs/amino";
+import { TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
+import { sha256 } from '@cosmjs/crypto'
+import { toHex } from "@cosmjs/encoding";
 
 export type NesaClientOptions = SigningStargateClientOptions & {
   logger?: Logger;
@@ -80,6 +84,8 @@ export class NesaClient{
   // public readonly revisionNumber: Long;
   public readonly estimatedBlockTime: number;
   public readonly estimatedIndexerTime: number;
+  private broadcastPromise: any
+  private signResult: any
 
   public static async connectWithSigner(
     endpoint: string,
@@ -226,6 +232,63 @@ export class NesaClient{
       transactionHash: result.transactionHash,
       height: result.height
     };
+  }
+
+  public async broadcastRegisterSession() {
+    if (!this.signResult) {
+      return new Error('Please sign first')
+    }
+    if (this.broadcastPromise) {
+      return this.broadcastPromise
+    }
+    this.broadcastPromise = new Promise((resolve, reject) => {
+      this.sign.broadcastTx(Uint8Array.from(TxRaw.encode(this.signResult).finish()))
+        .then((result) => {
+          if (isDeliverTxFailure(result)) {
+            reject(new Error(createDeliverTxFailureMessage(result)))
+          } else {
+            resolve({
+              events: result.events,
+              transactionHash: result.transactionHash,
+              height: result.height,
+              account: MsgRegisterSessionResponse.decode(result.msgResponses[0]?.value).account
+            })
+          }
+        }).catch((error) => {
+          reject(error)
+        })
+    })
+  }
+
+  public async signRegisterSession(
+    sessionId: string,
+    modelName: string,
+    fee: StdFee,
+    lockBalance?: Coin,
+    vrf?: VRF,
+  ): Promise<any> {
+    this.logger.verbose(`Register Session`);
+    const senderAddress = this.senderAddress;
+    const registerSessionMsg = {
+      typeUrl: '/agent.v1.MsgRegisterSession',
+      value: MsgRegisterSession.fromPartial({
+        account: senderAddress,
+        sessionId,
+        modelName,
+        lockBalance,
+        vrf
+      }),
+    };
+    const signResult = await this.sign.sign(
+      senderAddress,
+      [registerSessionMsg],
+      fee,
+      ""
+    )
+    this.signResult = signResult
+    const hex = Buffer.from(Uint8Array.from(TxRaw.encode(this.signResult).finish())).toString('hex')
+    this.broadcastRegisterSession()
+    return { transactionHash: toHex(sha256(Buffer.from(hex, 'hex'))).toUpperCase() }
   }
 
   public async registerSession(

@@ -31,6 +31,7 @@ class ChatClient {
   private assistantRoleName = ""
   private lastNesaClientPromise: any
   private lastUserMinimumLockPromise: any
+  private nesaClient: any
   constructor(options: ConfigOptions) {
     this.modelName = options.modelName;
     this.chainInfo = options.chainInfo || defaultChainInfo;
@@ -230,6 +231,51 @@ class ChatClient {
     }
   }
 
+  checkSignBroadcastResult() {
+    return new Promise((resolve, reject) => {
+      this.nesaClient.broadcastRegisterSession()
+        .then((result: any) => {
+          WalletOperation.requestAgentInfo(this.nesaClient, result?.account, this.modelName)
+            .then((agentInfo: any) => {
+              console.log('agentInfo: ', agentInfo)
+              if (agentInfo && agentInfo?.inferenceAgents?.length > 0) {
+                const selectAgent = agentInfo?.inferenceAgents[0]
+                let agentWsUrl = selectAgent.url
+                let agentHeartbeatUrl = selectAgent.url
+                if (selectAgent.url?.endsWith("/")) {
+                  agentWsUrl = agentWsUrl + 'chat';
+                  agentHeartbeatUrl = agentHeartbeatUrl + 'heartbeat';
+                } else {
+                  agentWsUrl = agentWsUrl + '/chat';
+                  agentHeartbeatUrl = agentHeartbeatUrl + '/heartbeat';
+                }
+                socket.init({
+                  ws_url: agentHeartbeatUrl,
+                  onopen: () => {
+                    this.agentUrl = agentWsUrl;
+                    this.isRegisterSessioning = false;
+                    resolve(result);
+                  },
+                  onerror: () => {
+                    reject(new Error("Agent heartbeat packet connection failed"));
+                  }
+                });
+              } else {
+                this.isRegisterSessioning = false;
+                reject(new Error("No agent found"))
+              }
+            })
+            .catch((error) => {
+              console.log("requestAgentInfoError: ", error);
+              reject(error);
+            })
+        })
+        .catch((error: any) => {
+          console.log('error: ', error)
+        })
+    })
+  }
+
   requestSession() {
     return new Promise((resolve, reject) => {
       if (!this.checkChainInfo()) {
@@ -242,6 +288,7 @@ class ChatClient {
         reject(new Error("LockAmount invalid value"))
       } else {
         this.getNesaClient().then((nesaClient: any) => {
+          this.nesaClient = nesaClient
           this.getChainParams(nesaClient).then((params: any) => {
             if (params && params?.params) {
               if (new BigNumber(this.lockAmount).isLessThan(params?.params?.userMinimumLock?.amount)) {
@@ -250,41 +297,9 @@ class ChatClient {
                 WalletOperation.registerSession(nesaClient, this.modelName, this.lockAmount, params?.params?.userMinimumLock?.denom, this.chainInfo)
                   .then((result: any) => {
                     console.log('registerSession-result: ', result)
-                    if (result?.transactionHash) {
-                      WalletOperation.requestAgentInfo(nesaClient, result?.account, this.modelName)
-                        .then((agentInfo: any) => {
-                          console.log('agentInfo: ', agentInfo)
-                          if (agentInfo && agentInfo?.inferenceAgents?.length > 0) {
-                            const selectAgent = agentInfo?.inferenceAgents[0]
-                            let agentWsUrl = selectAgent.url
-                            let agentHeartbeatUrl = selectAgent.url
-                            if (selectAgent.url?.endsWith("/")) {
-                              agentWsUrl = agentWsUrl + 'chat';
-                              agentHeartbeatUrl = agentHeartbeatUrl + 'heartbeat';
-                            } else {
-                              agentWsUrl = agentWsUrl + '/chat';
-                              agentHeartbeatUrl = agentHeartbeatUrl + '/heartbeat';
-                            }
-                            socket.init({
-                              ws_url: agentHeartbeatUrl,
-                              onopen: () => {
-                                this.agentUrl = agentWsUrl;
-                                this.isRegisterSessioning = false;
-                                resolve(result);
-                              },
-                              onerror: () => {
-                                reject(new Error("Agent heartbeat packet connection failed"));
-                              }
-                            });
-                          } else {
-                            this.isRegisterSessioning = false;
-                            reject(new Error("No agent found"))
-                          }
-                        })
-                        .catch((error) => {
-                          console.log("requestAgentInfoError: ", error);
-                          reject(error);
-                        })
+                    if (result) {
+                      this.checkSignBroadcastResult()
+                      resolve(result)
                     } else {
                       this.isRegisterSessioning = false;
                       reject(result);
@@ -314,17 +329,22 @@ class ChatClient {
     return new Promise((resolve, reject) => {
       if (this.isRegisterSessioning) {
         reject(new Error("Registering session, please wait"));
-      } else if (!this.agentUrl) {
-        reject(new Error("Please initiate registration operation first"));
       } else {
-        const readableStream = new Readable({ objectMode: true });
-        readableStream._read = () => { };
-        resolve(readableStream);
-        if (this.isChatinging) {
-          this.chatQueue.push({ readableStream, question });
-        } else {
-          this.requestChatQueue(readableStream, question);
-        }
+        this.checkSignBroadcastResult()
+          .then((result: any) => {
+            console.log('checkSignBroadcastResult-result: ', result)
+            const readableStream = new Readable({ objectMode: true });
+            readableStream._read = () => { };
+            resolve(readableStream);
+            if (this.isChatinging) {
+              this.chatQueue.push({ readableStream, question });
+            } else {
+              this.requestChatQueue(readableStream, question);
+            }
+          })
+          .catch((error) => {
+            reject(error)
+          })
       }
     });
   }

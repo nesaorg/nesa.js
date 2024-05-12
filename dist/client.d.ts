@@ -8,6 +8,7 @@ import { Payment, Params, SessionStatus } from "./codec/agent/v1/agent";
 import { Coin } from "./codec/cosmos/base/v1beta1/coin";
 import { AgentExtension } from './queries';
 import { QueryModelAllResponse, QueryModelResponse, QueryParamsResponse, QueryInferenceAgentResponse, QuerySessionResponse, QuerySessionByAgentResponse, QueryVRFSeedResponse } from "./codec/agent/v1/query";
+import { StdFee } from "@cosmjs/amino";
 export type NesaClientOptions = SigningStargateClientOptions & {
     logger?: Logger;
     gasPrice: GasPrice;
@@ -34,11 +35,15 @@ export declare class NesaClient {
     readonly chainId: string;
     readonly estimatedBlockTime: number;
     readonly estimatedIndexerTime: number;
+    private broadcastPromise;
+    private signResult;
     static connectWithSigner(endpoint: string, signer: OfflineSigner, senderAddress: string, chainId: string | undefined, options: NesaClientOptions): Promise<NesaClient>;
     private constructor();
     updateParams(authority: string, params: Params): Promise<MsgResult>;
     registerModel(name: string, repositoryUrl: string): Promise<MsgResult>;
     registerInferenceAgent(url: string, version: Long, lockBalance?: Coin): Promise<MsgResult>;
+    broadcastRegisterSession(): Promise<any>;
+    signRegisterSession(sessionId: string, modelName: string, fee: StdFee, lockBalance?: Coin, vrf?: VRF): Promise<any>;
     registerSession(sessionId: string, modelName: string, lockBalance?: Coin, vrf?: VRF): Promise<RegisterSessionResult>;
     submitPayment(sessionId: string, signature: Uint8Array, payment?: Payment): Promise<MsgResult>;
     claimSession(sessionId: string): Promise<MsgResult>;

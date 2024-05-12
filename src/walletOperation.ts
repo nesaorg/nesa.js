@@ -43,8 +43,12 @@ class WalletOperation {
     return new Promise(async (resolve, reject) => {
       const lockBalance = { denom: denom, amount: lockAmount };
       EncryptUtils.requestVrf(client, chainInfo).then(async (res) => {
+        const fee = {
+          amount: [{ denom: chainInfo.feeCurrencies[0].coinMinimalDenom, amount: "0" }],
+          gas: "200000",
+        }
         if (res?.vrf && res?.sessionId) {
-          resolve(client.registerSession(res.sessionId, modelName, lockBalance, res.vrf))
+          resolve(client.signRegisterSession(res.sessionId, modelName, fee, lockBalance, res.vrf))
         } else {
           reject(new Error('Vrf seed is null'))
         }

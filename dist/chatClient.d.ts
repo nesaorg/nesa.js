@@ -22,12 +22,14 @@ declare class ChatClient {
     private assistantRoleName;
     private lastNesaClientPromise;
     private lastUserMinimumLockPromise;
+    private nesaClient;
     constructor(options: ConfigOptions);
     getNesaClient(): any;
     getChainParams(nesaClient: any): any;
     version(): string;
     checkChainInfo(): string | false;
     requestChatQueue(readableStream: any, question: questionTypes): void;
+    checkSignBroadcastResult(): Promise<unknown>;
     requestSession(): Promise<unknown>;
     requestChat(question: any): Promise<unknown>;
 }
