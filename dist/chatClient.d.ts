@@ -20,7 +20,11 @@ declare class ChatClient {
     private isRegisterSessioning;
     private agentUrl;
     private assistantRoleName;
+    private lastNesaClientPromise;
+    private lastUserMinimumLockPromise;
     constructor(options: ConfigOptions);
+    getNesaClient(): any;
+    getChainParams(nesaClient: any): any;
     version(): string;
     checkChainInfo(): string | false;
     requestChatQueue(readableStream: any, question: questionTypes): void;
