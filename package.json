@@ -1,5 +1,5 @@
 {
-  "name": "nesa-sdk-1",
+  "name": "nesa-sdk",
   "version": "1.0.0",
   "description": "",
   "main": "dist/index.js",
