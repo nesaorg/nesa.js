@@ -61,9 +61,9 @@ class EncryptUtils {
     return signatureData;
   }
 
-  static requestVrf(client: any, chainInfo: ChainInfo): Promise<any> {
+  static requestVrf(client: any, chainInfo: ChainInfo, offlineSigner: any): Promise<any> {
     return new Promise((resolve, reject) => {
-      WalletOperation.requestVrfSeed(client, chainInfo)
+      WalletOperation.requestVrfSeed(client, chainInfo, offlineSigner)
         .then((res) => {
           if (res?.seed) {
             const publicKeyY = BigInt(`0x${this.publicKey.y}`);

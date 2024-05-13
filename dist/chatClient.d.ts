@@ -3,6 +3,7 @@ interface ConfigOptions {
     modelName: string;
     lockAmount?: string;
     chainInfo?: ChainInfo;
+    walletName?: string;
 }
 interface questionTypes {
     messages: any;
@@ -24,7 +25,9 @@ declare class ChatClient {
     private lastUserMinimumLockPromise;
     private lastGetAgentInfoPromise;
     private nesaClient;
+    private offLineigner;
     constructor(options: ConfigOptions);
+    initOfflineSigner(walletName: any): Promise<void>;
     getNesaClient(): any;
     getChainParams(nesaClient: any): any;
     version(): string;

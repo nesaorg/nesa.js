@@ -5,11 +5,13 @@ import { ChainInfo } from "@keplr-wallet/types"
 import { defaultChainInfo, defaultLockAmount, sdkVersion } from "./default.config";
 import { socket } from "./socket";
 import { BigNumber } from 'bignumber.js';
+import { CosmjsOfflineSigner, suggestChain } from '@leapwallet/cosmos-snap-provider';
 
 interface ConfigOptions {
   modelName: string;
   lockAmount?: string;
   chainInfo?: ChainInfo;
+  walletName?: string
 }
 
 interface questionTypes {
@@ -33,12 +35,33 @@ class ChatClient {
   private lastUserMinimumLockPromise: any
   private lastGetAgentInfoPromise: any
   private nesaClient: any
+  private offLineigner: any
   constructor(options: ConfigOptions) {
     this.modelName = options.modelName;
     this.chainInfo = options.chainInfo || defaultChainInfo;
     this.lockAmount = options.lockAmount || defaultLockAmount;
     this.lockAmountDenom = ''
-    this.getNesaClient()
+    this.initOfflineSigner(options.walletName)
+  }
+
+  async initOfflineSigner(walletName: any) {
+    try {
+      if (walletName === 'npm:@leapwallet/metamask-cosmos-snap') {
+        await suggestChain(this.chainInfo, { force: false });
+        const offlineSigner = new CosmjsOfflineSigner(this.chainInfo.chainId);
+        this.offLineigner = offlineSigner
+      } else if (window?.keplr) {
+        const { keplr } = window;
+        await keplr.experimentalSuggestChain(this.chainInfo);
+        await keplr.enable(this.chainInfo.chainId);
+        this.offLineigner = window.getOfflineSigner!(this.chainInfo.chainId);
+      } else {
+        console.log('No wallet installed, please install keplr or metamask wallet first')
+      }
+      this.getNesaClient()
+    } catch (error) {
+      console.log('initOfflineSigner-error: ', error)
+    }
   }
 
   getNesaClient() {
@@ -47,7 +70,7 @@ class ChatClient {
     }
     console.log('Init nesa client')
     this.lastNesaClientPromise = new Promise((resolve) => {
-      WalletOperation.getNesaClient(this.chainInfo)
+      WalletOperation.getNesaClient(this.chainInfo, this.offLineigner)
         .then((client) => {
           resolve(client)
           this.getChainParams(client)
@@ -306,7 +329,7 @@ class ChatClient {
               if (new BigNumber(this.lockAmount).isLessThan(params?.params?.userMinimumLock?.amount)) {
                 reject(new Error("LockAmount cannot be less than " + params?.params?.userMinimumLock?.amount))
               } else {
-                WalletOperation.registerSession(nesaClient, this.modelName, this.lockAmount, params?.params?.userMinimumLock?.denom, this.chainInfo)
+                WalletOperation.registerSession(nesaClient, this.modelName, this.lockAmount, params?.params?.userMinimumLock?.denom, this.chainInfo, this.offLineigner)
                   .then((result: any) => {
                     console.log('registerSession-result: ', result)
                     if (result) {

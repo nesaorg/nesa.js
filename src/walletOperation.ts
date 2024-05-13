@@ -6,14 +6,10 @@ import EncryptUtils from "./encryptUtils";
 import Long from "long";
 
 class WalletOperation {
-  static getNesaClient(chainInfo: ChainInfo): Promise<any> {
+  static getNesaClient(chainInfo: ChainInfo, offlineSigner: any): Promise<any> {
     return new Promise(async (resolve, reject) => {
-      if (window?.keplr) {
-        const { keplr } = window;
+      if (offlineSigner) {
         const { chainId, rpc } = chainInfo;
-        await keplr.experimentalSuggestChain(chainInfo);
-        await keplr.enable(chainId);
-        const offlineSigner = window.getOfflineSigner!(chainId);
         const account: AccountData = (await offlineSigner.getAccounts())[0];
         NesaClient.connectWithSigner(
           rpc,
@@ -33,16 +29,16 @@ class WalletOperation {
           reject(error)
         })
       } else {
-        reject(new Error("Keplr Wallet plugin not found"));
+        reject(new Error("No wallet installed, please install keplr or metamask wallet first"));
       }
     })
   }
 
-  static registerSession(client: any, modelName: string, lockAmount: string, denom: string, chainInfo: ChainInfo): Promise<any> {
+  static registerSession(client: any, modelName: string, lockAmount: string, denom: string, chainInfo: ChainInfo, offlineSigner: any): Promise<any> {
     EncryptUtils.generateKey();
     return new Promise(async (resolve, reject) => {
       const lockBalance = { denom: denom, amount: lockAmount };
-      EncryptUtils.requestVrf(client, chainInfo).then(async (res) => {
+      EncryptUtils.requestVrf(client, chainInfo, offlineSigner).then(async (res) => {
         const fee = {
           amount: [{ denom: chainInfo.feeCurrencies[0].coinMinimalDenom, amount: "0" }],
           gas: "200000",
@@ -84,14 +80,13 @@ class WalletOperation {
     })
   }
 
-  static requestVrfSeed(client: any, chainInfo: ChainInfo): Promise<any> {
+  static requestVrfSeed(client: any, chainInfo: ChainInfo, offlineSigner: any): Promise<any> {
     return new Promise(async (resolve, reject) => {
       if (window?.keplr) {
         const { keplr } = window;
         const { chainId } = chainInfo;
         await keplr.experimentalSuggestChain(chainInfo);
         await keplr.enable(chainId);
-        const offlineSigner = window.getOfflineSigner!(chainId);
         const account: AccountData = (await offlineSigner.getAccounts())[0];
         resolve(client.getVRFSeed(account.address))
       } else {

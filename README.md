@@ -23,6 +23,7 @@ const ChatUtils = new ChatClient({
   modelName: "",  //  model name
   lockAmount: "", //  optional. lock amount , default 1000
   chainInfo: {}   //  optional. chainInfo , Refer to the defaultChainInfo format in src/default.config.ts
+  walletName: ""  //  optional. walletName , default keplr , When using metamask, please set this parameter to: npm:@leapwallet/metamask-cosmos-snap
 })
 ```
 
