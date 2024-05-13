@@ -81,18 +81,12 @@ class WalletOperation {
   }
 
   static requestVrfSeed(client: any, chainInfo: ChainInfo, offlineSigner: any): Promise<any> {
-    return new Promise(async (resolve, reject) => {
-      if (window?.keplr) {
-        const { keplr } = window;
-        const { chainId } = chainInfo;
-        await keplr.experimentalSuggestChain(chainInfo);
-        await keplr.enable(chainId);
-        const account: AccountData = (await offlineSigner.getAccounts())[0];
-        resolve(client.getVRFSeed(account.address))
-      } else {
-        reject("Keplr Wallet plugin not found");
-      }
-    })
+    return new Promise(async (resolve) => {
+      const { chainId } = chainInfo;
+      console.log('chainId', chainId)
+      const account: AccountData = (await offlineSigner.getAccounts())[0];
+      resolve(client.getVRFSeed(account.address))
+  })
   }
 }
 
