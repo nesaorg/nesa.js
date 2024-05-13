@@ -31,6 +31,7 @@ class ChatClient {
   private assistantRoleName = ""
   private lastNesaClientPromise: any
   private lastUserMinimumLockPromise: any
+  private lastGetAgentInfoPromise: any
   private nesaClient: any
   constructor(options: ConfigOptions) {
     this.modelName = options.modelName;
@@ -231,47 +232,58 @@ class ChatClient {
     }
   }
 
+  requestAgentInfo(result: any) {
+    if (this.lastGetAgentInfoPromise) {
+      return this.lastGetAgentInfoPromise;
+    }
+    this.lastGetAgentInfoPromise = new Promise((resolve, reject) => {
+      WalletOperation.requestAgentInfo(this.nesaClient, result?.account, this.modelName)
+        .then((agentInfo: any) => {
+          console.log('agentInfo: ', agentInfo)
+          if (agentInfo && agentInfo?.inferenceAgents?.length > 0) {
+            const selectAgent = agentInfo?.inferenceAgents[0]
+            let agentWsUrl = selectAgent.url
+            let agentHeartbeatUrl = selectAgent.url
+            if (selectAgent.url?.endsWith("/")) {
+              agentWsUrl = agentWsUrl + 'chat';
+              agentHeartbeatUrl = agentHeartbeatUrl + 'heartbeat';
+            } else {
+              agentWsUrl = agentWsUrl + '/chat';
+              agentHeartbeatUrl = agentHeartbeatUrl + '/heartbeat';
+            }
+            socket.init({
+              ws_url: agentHeartbeatUrl,
+              onopen: () => {
+                this.agentUrl = agentWsUrl;
+                this.isRegisterSessioning = false;
+                resolve(result);
+              },
+              onerror: () => {
+                reject(new Error("Agent heartbeat packet connection failed"));
+              }
+            });
+          } else {
+            this.isRegisterSessioning = false;
+            reject(new Error("No agent found"))
+          }
+        })
+        .catch((error) => {
+          console.log("requestAgentInfoError: ", error);
+          this.lastGetAgentInfoPromise = undefined
+          reject(error);
+        })
+    });
+  }
+
   checkSignBroadcastResult() {
     return new Promise((resolve, reject) => {
       this.nesaClient.broadcastRegisterSession()
         .then((result: any) => {
-          WalletOperation.requestAgentInfo(this.nesaClient, result?.account, this.modelName)
-            .then((agentInfo: any) => {
-              console.log('agentInfo: ', agentInfo)
-              if (agentInfo && agentInfo?.inferenceAgents?.length > 0) {
-                const selectAgent = agentInfo?.inferenceAgents[0]
-                let agentWsUrl = selectAgent.url
-                let agentHeartbeatUrl = selectAgent.url
-                if (selectAgent.url?.endsWith("/")) {
-                  agentWsUrl = agentWsUrl + 'chat';
-                  agentHeartbeatUrl = agentHeartbeatUrl + 'heartbeat';
-                } else {
-                  agentWsUrl = agentWsUrl + '/chat';
-                  agentHeartbeatUrl = agentHeartbeatUrl + '/heartbeat';
-                }
-                socket.init({
-                  ws_url: agentHeartbeatUrl,
-                  onopen: () => {
-                    this.agentUrl = agentWsUrl;
-                    this.isRegisterSessioning = false;
-                    resolve(result);
-                  },
-                  onerror: () => {
-                    reject(new Error("Agent heartbeat packet connection failed"));
-                  }
-                });
-              } else {
-                this.isRegisterSessioning = false;
-                reject(new Error("No agent found"))
-              }
-            })
-            .catch((error) => {
-              console.log("requestAgentInfoError: ", error);
-              reject(error);
-            })
+          resolve(this.requestAgentInfo(result))
         })
         .catch((error: any) => {
           console.log('error: ', error)
+          reject(error)
         })
     })
   }
@@ -329,7 +341,7 @@ class ChatClient {
     return new Promise((resolve, reject) => {
       if (this.isRegisterSessioning) {
         reject(new Error("Registering session, please wait"));
-      } else {
+      } else if (!this.agentUrl) {
         this.checkSignBroadcastResult()
           .then((result: any) => {
             console.log('checkSignBroadcastResult-result: ', result)
@@ -345,6 +357,15 @@ class ChatClient {
           .catch((error) => {
             reject(error)
           })
+      } else {
+        const readableStream = new Readable({ objectMode: true });
+        readableStream._read = () => { };
+        resolve(readableStream);
+        if (this.isChatinging) {
+          this.chatQueue.push({ readableStream, question });
+        } else {
+          this.requestChatQueue(readableStream, question);
+        }
       }
     });
   }

@@ -22,6 +22,7 @@ declare class ChatClient {
     private assistantRoleName;
     private lastNesaClientPromise;
     private lastUserMinimumLockPromise;
+    private lastGetAgentInfoPromise;
     private nesaClient;
     constructor(options: ConfigOptions);
     getNesaClient(): any;
@@ -29,6 +30,7 @@ declare class ChatClient {
     version(): string;
     checkChainInfo(): string | false;
     requestChatQueue(readableStream: any, question: questionTypes): void;
+    requestAgentInfo(result: any): any;
     checkSignBroadcastResult(): Promise<unknown>;
     requestSession(): Promise<unknown>;
     requestChat(question: any): Promise<unknown>;
