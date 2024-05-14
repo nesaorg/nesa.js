@@ -2,7 +2,7 @@ import EncryptUtils from "./encryptUtils";
 import WalletOperation from "./walletOperation";
 import { Readable } from "stream-browserify";
 import { ChainInfo } from "@keplr-wallet/types"
-import { defaultChainInfo, defaultLockAmount, sdkVersion } from "./default.config";
+import { defaultChainInfo, defaultLockAmount, defaultSingleLockUpAmount, defaultSingleLockUpThreshold, sdkVersion } from "./default.config";
 import { socket } from "./socket";
 import { BigNumber } from 'bignumber.js';
 import { CosmjsOfflineSigner, suggestChain } from '@leapwallet/cosmos-snap-provider';
@@ -11,7 +11,9 @@ interface ConfigOptions {
   modelName: string;
   lockAmount?: string;
   chainInfo?: ChainInfo;
-  walletName?: string
+  walletName?: string;
+  singleLockUpAmount?: string;
+  singleLockUpThreshold?: string
 }
 
 interface questionTypes {
@@ -23,10 +25,13 @@ class ChatClient {
   public modelName: string;
   public chainInfo: ChainInfo;
   public lockAmount: string;
+  public singleLockUpAmount: string;
+  public singleLockUpThreshold: string;
   public lockAmountDenom: string;
   private chatQueue: any = [];
   private chatSeq = 0;
   private totalPayment = 1;
+  private totalSignatureParment = 0;
   private isChatinging = false;
   private isRegisterSessioning = false;
   private agentUrl = "";
@@ -36,10 +41,14 @@ class ChatClient {
   private lastGetAgentInfoPromise: any
   private nesaClient: any
   private offLineigner: any
+  private signaturePayment: any;
   constructor(options: ConfigOptions) {
     this.modelName = options.modelName;
     this.chainInfo = options.chainInfo || defaultChainInfo;
     this.lockAmount = options.lockAmount || defaultLockAmount;
+    this.signaturePayment = {}
+    this.singleLockUpAmount = options.singleLockUpAmount || defaultSingleLockUpAmount;
+    this.singleLockUpThreshold = options.singleLockUpThreshold || defaultSingleLockUpThreshold
     this.lockAmountDenom = ''
     this.initOfflineSigner(options.walletName)
   }
@@ -111,6 +120,34 @@ class ChatClient {
       && this.chainInfo?.feeCurrencies[0]?.coinMinimalDenom
   }
 
+  getSignaturePayment() {
+    if (this.signaturePayment[this.totalSignatureParment]) {
+      return this.signaturePayment[this.totalSignatureParment]
+    }
+    const signaturePayment = EncryptUtils.signMessage(`${this.totalSignatureParment}${this.chainInfo.feeCurrencies[0].coinMinimalDenom}`, this.chatSeq, false);
+    this.signaturePayment[this.totalSignatureParment] = signaturePayment
+    return signaturePayment;
+  }
+
+  checkSingleLockUpAmount() {
+    if (new BigNumber(this.totalSignatureParment).isLessThanOrEqualTo(this.singleLockUpThreshold)) {
+      this.totalSignatureParment = Number(new BigNumber(this.totalSignatureParment).plus(this.singleLockUpAmount).toFixed(0, 1));
+      return this.getSignaturePayment()
+    }
+    if (new BigNumber(this.totalSignatureParment).minus(this.totalPayment).isLessThanOrEqualTo(this.singleLockUpThreshold)) {
+      if (new BigNumber(this.totalSignatureParment).isLessThan(this.totalPayment)) {
+        this.totalSignatureParment = Number(this.totalPayment);
+        return this.getSignaturePayment()
+      }
+      // if (new BigNumber(this.totalSignatureParment).plus(this.singleLockUpAmount).isGreaterThan(this.lockAmount)) {
+      //   this.totalSignatureParment = Number(this.lockAmount);
+      //   return this.getSignaturePayment()
+      // }
+      this.totalSignatureParment = Number(new BigNumber(this.totalSignatureParment).plus(this.singleLockUpAmount).toFixed(0, 1));
+    }
+    return this.getSignaturePayment()
+  }
+
   requestChatQueue(readableStream: any, question: questionTypes) {
     this.isChatinging = true;
     this.chatSeq += 1;
@@ -119,6 +156,7 @@ class ChatClient {
       const ws = new WebSocket(this.agentUrl);
       ws.addEventListener("open", () => {
         if (ws.readyState === 1) {
+          this.signaturePayment = {}
           const questionStr = JSON.stringify({
             stream: true,
             ...question,
@@ -181,11 +219,11 @@ class ChatClient {
           });
           this.isChatinging = false;
         } else {
+          const signedMessage = this.checkSingleLockUpAmount();
           const total_payment = {
-            amount: this.totalPayment,
+            amount: this.totalSignatureParment,
             denom: this.chainInfo.feeCurrencies[0].coinMinimalDenom,
           };
-          const signedMessage = EncryptUtils.signMessage(`${total_payment.amount}${total_payment.denom}`, this.chatSeq, false);
           if (signedMessage) {
             readableStream.push({
               code: 200,

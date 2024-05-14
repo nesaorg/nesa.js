@@ -41,7 +41,7 @@ class WalletOperation {
       EncryptUtils.requestVrf(client, chainInfo, offlineSigner).then(async (res) => {
         const fee = {
           amount: [{ denom: chainInfo.feeCurrencies[0].coinMinimalDenom, amount: "0" }],
-          gas: "200000",
+          gas: "100000",
         }
         if (res?.vrf && res?.sessionId) {
           resolve(client.signRegisterSession(res.sessionId, modelName, fee, lockBalance, res.vrf))

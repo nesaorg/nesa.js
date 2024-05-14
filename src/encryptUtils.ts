@@ -74,6 +74,7 @@ class EncryptUtils {
               compressedPublicKey = "03" + this.publicKey.x;
             }
             const [hash, proof] = Evaluate(this.privateKeyBuf, res.seed);
+            console.log('sessionId: ', compressedPublicKey)
             resolve({
               vrf: {
                 seed: res.seed,

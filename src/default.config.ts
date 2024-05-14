@@ -2,6 +2,8 @@ import { ChainInfo } from "@keplr-wallet/types"
 const defaultAgentUrl = "wss://agent.nesa.ai/pingws";
 const defaultLockAmount = '1000'
 const sdkVersion = '1.0.0'
+const defaultSingleLockUpAmount = '100'
+const defaultSingleLockUpThreshold = '10'
 const defaultChainInfo: ChainInfo = {
     chainId: 'nesa-testnet-3',
     chainName: 'Nesa Testnet',
@@ -64,4 +66,11 @@ const defaultChainInfo: ChainInfo = {
     },
 };
 
-export { defaultAgentUrl, defaultLockAmount, defaultChainInfo, sdkVersion };
+export {
+    defaultAgentUrl,
+    defaultLockAmount,
+    defaultChainInfo,
+    sdkVersion,
+    defaultSingleLockUpAmount,
+    defaultSingleLockUpThreshold,
+};
