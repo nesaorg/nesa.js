@@ -2,7 +2,6 @@ import * as CryptoJS from "crypto-js";
 import { Evaluate } from "@idena/vrf-js";
 import * as Secp256k1 from "@lionello/secp256k1-js";
 import WalletOperation from "./walletOperation";
-import { ChainInfo } from "@keplr-wallet/types";
 
 class EncryptUtils {
   public static privateKey: any;
@@ -61,9 +60,9 @@ class EncryptUtils {
     return signatureData;
   }
 
-  static requestVrf(client: any, chainInfo: ChainInfo, offlineSigner: any): Promise<any> {
+  static requestVrf(client: any, offlineSigner: any): Promise<any> {
     return new Promise((resolve, reject) => {
-      WalletOperation.requestVrfSeed(client, chainInfo, offlineSigner)
+      WalletOperation.requestVrfSeed(client, offlineSigner)
         .then((res) => {
           if (res?.seed) {
             const publicKeyY = BigInt(`0x${this.publicKey.y}`);

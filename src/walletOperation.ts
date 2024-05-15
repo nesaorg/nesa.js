@@ -38,10 +38,10 @@ class WalletOperation {
     EncryptUtils.generateKey();
     return new Promise(async (resolve, reject) => {
       const lockBalance = { denom: denom, amount: lockAmount };
-      EncryptUtils.requestVrf(client, chainInfo, offlineSigner).then(async (res) => {
+      EncryptUtils.requestVrf(client, offlineSigner).then(async (res) => {
         const fee = {
           amount: [{ denom: chainInfo.feeCurrencies[0].coinMinimalDenom, amount: "0" }],
-          gas: "100000",
+          gas: "200000",
         }
         if (res?.vrf && res?.sessionId) {
           resolve(client.signRegisterSession(res.sessionId, modelName, fee, lockBalance, res.vrf))
@@ -54,39 +54,29 @@ class WalletOperation {
 
   static requestAgentInfo(client: any, agentName: string, modelName: string): Promise<any> {
     return new Promise(async (resolve, reject) => {
-      if (window?.keplr) {
-        if (client) {
-          resolve(client.getInferenceAgent(agentName, modelName, Long.fromNumber(0)))
-        } else {
-          reject("Client init failed");
-        }
+      if (client) {
+        resolve(client.getInferenceAgent(agentName, modelName, Long.fromNumber(0)))
       } else {
-        reject("Keplr Wallet plugin not found");
+        reject("Client init failed");
       }
     })
   }
 
   static requestParams(client: any): Promise<any> {
     return new Promise(async (resolve, reject) => {
-      if (window?.keplr) {
-        if (client) {
-          resolve(client.getParams())
-        } else {
-          reject("Client init failed");
-        }
+      if (client) {
+        resolve(client.getParams())
       } else {
-        reject("Keplr Wallet plugin not found");
+        reject("Client init failed");
       }
     })
   }
 
-  static requestVrfSeed(client: any, chainInfo: ChainInfo, offlineSigner: any): Promise<any> {
+  static requestVrfSeed(client: any, offlineSigner: any): Promise<any> {
     return new Promise(async (resolve) => {
-      const { chainId } = chainInfo;
-      console.log('chainId', chainId)
       const account: AccountData = (await offlineSigner.getAccounts())[0];
       resolve(client.getVRFSeed(account.address))
-  })
+    })
   }
 }
 

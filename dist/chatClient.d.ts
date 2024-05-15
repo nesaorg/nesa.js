@@ -4,8 +4,8 @@ interface ConfigOptions {
     lockAmount?: string;
     chainInfo?: ChainInfo;
     walletName?: string;
-    singleLockUpAmount?: string;
-    singleLockUpThreshold?: string;
+    singlePaymentAmount?: string;
+    lowBalance?: string;
 }
 interface questionTypes {
     messages: any;
@@ -15,13 +15,13 @@ declare class ChatClient {
     modelName: string;
     chainInfo: ChainInfo;
     lockAmount: string;
-    singleLockUpAmount: string;
-    singleLockUpThreshold: string;
+    singlePaymentAmount: string;
+    lowBalance: string;
     lockAmountDenom: string;
     private chatQueue;
     private chatSeq;
-    private totalPayment;
-    private totalSignatureParment;
+    private totalUsedPayment;
+    private totalSignedPayment;
     private isChatinging;
     private isRegisterSessioning;
     private agentUrl;
@@ -39,7 +39,7 @@ declare class ChatClient {
     version(): string;
     checkChainInfo(): string | false;
     getSignaturePayment(): any;
-    checkSingleLockUpAmount(): any;
+    checkSinglePaymentAmount(): any;
     requestChatQueue(readableStream: any, question: questionTypes): void;
     requestAgentInfo(result: any): any;
     checkSignBroadcastResult(): Promise<unknown>;

@@ -1,4 +1,3 @@
-import { ChainInfo } from "@keplr-wallet/types";
 declare class EncryptUtils {
     static privateKey: any;
     static publicKey: any;
@@ -9,7 +8,7 @@ declare class EncryptUtils {
     };
     static sortObjectKeys(obj: Record<string, any>): Record<string, any>;
     static signMessage(message: string, chatSeq: number, isQuestion?: boolean): string;
-    static requestVrf(client: any, chainInfo: ChainInfo, offlineSigner: any): Promise<any>;
+    static requestVrf(client: any, offlineSigner: any): Promise<any>;
     static signHeartbeat(message: string): string;
 }
 export default EncryptUtils;

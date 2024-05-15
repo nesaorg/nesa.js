@@ -2,7 +2,7 @@ import EncryptUtils from "./encryptUtils";
 import WalletOperation from "./walletOperation";
 import { Readable } from "stream-browserify";
 import { ChainInfo } from "@keplr-wallet/types"
-import { defaultChainInfo, defaultLockAmount, defaultSingleLockUpAmount, defaultSingleLockUpThreshold, sdkVersion } from "./default.config";
+import { defaultChainInfo, defaultLockAmount, defaultSinglePaymentAmount, defaultLowBalance, sdkVersion } from "./default.config";
 import { socket } from "./socket";
 import { BigNumber } from 'bignumber.js';
 import { CosmjsOfflineSigner, suggestChain } from '@leapwallet/cosmos-snap-provider';
@@ -12,8 +12,8 @@ interface ConfigOptions {
   lockAmount?: string;
   chainInfo?: ChainInfo;
   walletName?: string;
-  singleLockUpAmount?: string;
-  singleLockUpThreshold?: string
+  singlePaymentAmount?: string;
+  lowBalance?: string
 }
 
 interface questionTypes {
@@ -25,13 +25,13 @@ class ChatClient {
   public modelName: string;
   public chainInfo: ChainInfo;
   public lockAmount: string;
-  public singleLockUpAmount: string;
-  public singleLockUpThreshold: string;
+  public singlePaymentAmount: string;
+  public lowBalance: string;
   public lockAmountDenom: string;
   private chatQueue: any = [];
   private chatSeq = 0;
-  private totalPayment = 1;
-  private totalSignatureParment = 0;
+  private totalUsedPayment = 1;
+  private totalSignedPayment = 0;
   private isChatinging = false;
   private isRegisterSessioning = false;
   private agentUrl = "";
@@ -47,8 +47,8 @@ class ChatClient {
     this.chainInfo = options.chainInfo || defaultChainInfo;
     this.lockAmount = options.lockAmount || defaultLockAmount;
     this.signaturePayment = {}
-    this.singleLockUpAmount = options.singleLockUpAmount || defaultSingleLockUpAmount;
-    this.singleLockUpThreshold = options.singleLockUpThreshold || defaultSingleLockUpThreshold
+    this.singlePaymentAmount = options.singlePaymentAmount || defaultSinglePaymentAmount;
+    this.lowBalance = options.lowBalance || defaultLowBalance
     this.lockAmountDenom = ''
     this.initOfflineSigner(options.walletName)
   }
@@ -121,29 +121,29 @@ class ChatClient {
   }
 
   getSignaturePayment() {
-    if (this.signaturePayment[this.totalSignatureParment]) {
-      return this.signaturePayment[this.totalSignatureParment]
+    if (this.signaturePayment[this.totalSignedPayment]) {
+      return this.signaturePayment[this.totalSignedPayment]
     }
-    const signaturePayment = EncryptUtils.signMessage(`${this.totalSignatureParment}${this.chainInfo.feeCurrencies[0].coinMinimalDenom}`, this.chatSeq, false);
-    this.signaturePayment[this.totalSignatureParment] = signaturePayment
+    const signaturePayment = EncryptUtils.signMessage(`${this.totalSignedPayment}${this.chainInfo.feeCurrencies[0].coinMinimalDenom}`, this.chatSeq, false);
+    this.signaturePayment[this.totalSignedPayment] = signaturePayment
     return signaturePayment;
   }
 
-  checkSingleLockUpAmount() {
-    if (new BigNumber(this.totalSignatureParment).isLessThanOrEqualTo(this.singleLockUpThreshold)) {
-      this.totalSignatureParment = Number(new BigNumber(this.totalSignatureParment).plus(this.singleLockUpAmount).toFixed(0, 1));
+  checkSinglePaymentAmount() {
+    if (new BigNumber(this.totalSignedPayment).isLessThanOrEqualTo(this.lowBalance)) {
+      this.totalSignedPayment = Number(new BigNumber(this.totalSignedPayment).plus(this.singlePaymentAmount).toFixed(0, 1));
       return this.getSignaturePayment()
     }
-    if (new BigNumber(this.totalSignatureParment).minus(this.totalPayment).isLessThanOrEqualTo(this.singleLockUpThreshold)) {
-      if (new BigNumber(this.totalSignatureParment).isLessThan(this.totalPayment)) {
-        this.totalSignatureParment = Number(this.totalPayment);
+    if (new BigNumber(this.totalSignedPayment).minus(this.totalUsedPayment).isLessThanOrEqualTo(this.lowBalance)) {
+      if (new BigNumber(this.totalSignedPayment).isLessThan(this.totalUsedPayment)) {
+        this.totalSignedPayment = Number(this.totalUsedPayment);
         return this.getSignaturePayment()
       }
-      // if (new BigNumber(this.totalSignatureParment).plus(this.singleLockUpAmount).isGreaterThan(this.lockAmount)) {
-      //   this.totalSignatureParment = Number(this.lockAmount);
+      // if (new BigNumber(this.totalSignedPayment).plus(this.singlePaymentAmount).isGreaterThan(this.lockAmount)) {
+      //   this.totalSignedPayment = Number(this.lockAmount);
       //   return this.getSignaturePayment()
       // }
-      this.totalSignatureParment = Number(new BigNumber(this.totalSignatureParment).plus(this.singleLockUpAmount).toFixed(0, 1));
+      this.totalSignedPayment = Number(new BigNumber(this.totalSignedPayment).plus(this.singlePaymentAmount).toFixed(0, 1));
     }
     return this.getSignaturePayment()
   }
@@ -219,9 +219,9 @@ class ChatClient {
           });
           this.isChatinging = false;
         } else {
-          const signedMessage = this.checkSingleLockUpAmount();
+          const signedMessage = this.checkSinglePaymentAmount();
           const total_payment = {
-            amount: this.totalSignatureParment,
+            amount: this.totalSignedPayment,
             denom: this.chainInfo.feeCurrencies[0].coinMinimalDenom,
           };
           if (signedMessage) {
@@ -235,7 +235,7 @@ class ChatClient {
               total_payment,
               signature_payment: signedMessage,
             });
-            this.totalPayment += 1;
+            this.totalUsedPayment += 1;
             ws.send(data);
           } else {
             readableStream.push({
