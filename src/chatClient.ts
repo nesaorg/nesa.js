@@ -55,10 +55,6 @@ class ChatClient {
     this.walletName = options.walletName || ''
     window.nesaSdkVersion = sdkVersion
     this.initWallet()
-    // readableStream.push({
-    //   code: 301,
-    //   message: "Connecting to Nesa chain ...",
-    // })
   }
 
   initWallet() {
@@ -233,7 +229,7 @@ class ChatClient {
         if (messageTimes === 0) {
           if (messageJson === "ack") {
             readableStream.push({
-              code: 306,
+              code: 305,
               message: "Conducting inference",
             })
           } else {
@@ -252,14 +248,14 @@ class ChatClient {
             message: messageJson?.content?.split("[DONE]")[1],
           });
           readableStream.push({
-            code: 308,
+            code: 307,
             message: "Task completed, wait for another query"
           });
           this.isChatinging = false;
         } else {
           if (messageTimes === 1) {
             readableStream.push({
-              code: 307,
+              code: 306,
               message: "Receiving responses",
             })
             messageTimes += 1
@@ -359,7 +355,7 @@ class ChatClient {
             }
             let firstInitHeartbeat = true
             readableStream && readableStream.push({
-              code: 304,
+              code: 303,
               message: "Connecting to the validator",
             })
             socket.init({
@@ -369,7 +365,7 @@ class ChatClient {
                   this.agentUrl = agentWsUrl;
                   this.isRegisterSessioning = false;
                   readableStream.push({
-                    code: 305,
+                    code: 304,
                     message: "Waiting for query",
                   })
                   readableStream && readableStream.push(null)
@@ -434,7 +430,7 @@ class ChatClient {
                   .then((params: any) => {
                     if (params && params?.params) {
                       readableStream.push({
-                        code: 302,
+                        code: 301,
                         message: "Connected to Nesa chain",
                       })
                       if (new BigNumber(this.lockAmount).isLessThan(params?.params?.userMinimumLock?.amount)) {
@@ -449,7 +445,7 @@ class ChatClient {
                             console.log('registerSession-result: ', result)
                             if (result?.transactionHash) {
                               readableStream.push({
-                                code: 303,
+                                code: 302,
                                 message: "Choosing an inference validator",
                               })
                               this.checkSignBroadcastResult(readableStream)

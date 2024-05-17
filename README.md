@@ -42,14 +42,13 @@ This is a promise that will call back a **readableStream** object. You can get t
 
 Return Code and message
 
-| Code | Message                         | Remark                                                                                                   |
-| ---- | ------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| 200  | TransactionHash                 | requestSession transaction Hash                                                                          |
-| 301  | Connecting to Nesa chain        | Default step. The initialization SDK displays this state by default. The SDK will not output this state. |
-| 302  | Connected to Nesa chain         | Nesa chain is connected, and returns after the chain parameters are initialized.                         |
-| 303  | Choosing an inference validator | Signature successful, Choosing an inference validator                                                    |
-| 304  | Connecting to the validator     | Connecting to the validator                                                                              |
-| 305  | Waiting for query               | Waiting for query                                                                                        |
+| Code | Message                         | Remark                                                                           |
+| ---- | ------------------------------- | -------------------------------------------------------------------------------- |
+| 200  | TransactionHash                 | requestSession transaction Hash                                                  |
+| 301  | Connected to Nesa chain         | Nesa chain is connected, and returns after the chain parameters are initialized. |
+| 302  | Choosing an inference validator | Signature successful, Choosing an inference validator                            |
+| 303  | Connecting to the validator     | Connecting to the validator                                                      |
+| 304  | Waiting for query               | Waiting for query                                                                |
 
 #### `requestChat`: Start Conversation Interface
 
@@ -76,10 +75,9 @@ Return Code and message
 | 203  | Current chat contributions                       |
 | 204  | `websocket` connection error message             |
 | 205  | Business error information returned              |
-| 305  | Waiting for query                                | Waiting for query                      |
-| 306  | Conducting inference                             | Conducting inference                   |
-| 307  | Receiving responses                              | Receiving responses                    |
-| 308  | Task completed, wait for another query           | Task completed, wait for another query |
+| 305  | Conducting inference                             | Conducting inference                   |
+| 306  | Receiving responses                              | Receiving responses                    |
+| 307  | Task completed, wait for another query           | Task completed, wait for another query |
 
 ### Please note:
 
@@ -92,6 +90,21 @@ RPC: https://rpc.test.nesa.ai
 LCD: https://lcd.test.nesa.ai
 
 ```
+
+2. Get instructions about session progress
+
+The SDK will return a total of 7 statuses, see the table below. The specific status will be returned through the interfaces **requestSession** and **requestChat**, the specific status is as follows:
+
+| Code | Message                                | Remark                                                                                                           | Api                |
+| ---- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------ |
+| -    | Connecting to Nesa chain               | Default step. The initialization SDK displays this state by default. The SDK will not output this step.(Default) | -                  |
+| 301  | Connected to Nesa chain                | Nesa chain is connected, and returns after the chain parameters are initialized. (After click 'start inference') | **requestSession** |
+| 302  | Choosing an inference validator        | Signature successful, Choosing an inference validator                                                            | **requestSession** |
+| 303  | Connecting to the validator            | Connecting to the validator                                                                                      | **requestSession** |
+| 304  | Waiting for query                      | Waiting for query                                                                                                | **requestSession** |
+| 305  | Conducting inference                   | Conducting inference (After click 'start query')                                                                 | **requestChat**    |
+| 306  | Receiving responses                    | Receiving responses                                                                                              | **requestChat**    |
+| 307  | Task completed, wait for another query | Task completed, wait for another query                                                                           | **requestChat**    |
 
 ### Example
 
@@ -121,10 +134,10 @@ ChatUtils.requestSession()
         }
         //  For detailed code and message, please refer to the above API
         //  200 :  requestSession transaction Hash
-        //  302 :  Connected to Nesa chain
-        //  303 :  Choosing an inference validator
-        //  304 :  Connecting to the validator
-        //  305 :  Waiting for query
+        //  301 :  Connected to Nesa chain
+        //  302 :  Choosing an inference validator
+        //  303 :  Connecting to the validator
+        //  304 :  Waiting for query
     })
     readableStream.on("end",() => {
         // End of transmission
@@ -175,9 +188,9 @@ ChatUtils.requestChat({
         //  205 : Websocket business error information returned
 
         //  Processing transmission data
-        //  306 : Conducting inference
-        //  307 : Receiving responses
-        //  308 : Task completed, wait for another query
+        //  305 : Conducting inference
+        //  306 : Receiving responses
+        //  307 : Task completed, wait for another query
     })
     readableStream.on("end",() => {
         // End of transmission
