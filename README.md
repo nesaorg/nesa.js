@@ -31,6 +31,26 @@ const ChatUtils = new ChatClient({
 
 #### `requestSession`: First initiate a signature
 
+This is a promise that will call back a **readableStream** object. You can get the conversation information through **readableStream.on('data')**, which will return an object:
+
+```
+  {
+    code: 200,          // code
+    message: "message", //  message
+  }
+```
+
+Return Code and message
+
+| Code | Message                         | Remark                                                                                                   |
+| ---- | ------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| 200  | TransactionHash                 | requestSession transaction Hash                                                                          |
+| 301  | Connecting to Nesa chain        | Default step. The initialization SDK displays this state by default. The SDK will not output this state. |
+| 302  | Connected to Nesa chain         | Nesa chain is connected, and returns after the chain parameters are initialized.                         |
+| 303  | Choosing an inference validator | Signature successful, Choosing an inference validator                                                    |
+| 304  | Connecting to the validator     | Connecting to the validator                                                                              |
+| 305  | Waiting for query               | Waiting for query                                                                                        |
+
 #### `requestChat`: Start Conversation Interface
 
 This is a promise that will call back a **readableStream** object. You can get the conversation information through **readableStream.on('data')**, which will return an object:
@@ -48,14 +68,18 @@ This is a promise that will call back a **readableStream** object. You can get t
 
 Return Code and message
 
-| Code | Message                                          |
-| ---- | ------------------------------------------------ |
+| Code | Message                                          | Remark                                                                        |
+| ---- | ------------------------------------------------ | ----------------------------------------------------------------------------- |
 | 200  | Normal response                                  |
 | 201  | No signature found or the signature has expired. |
 | 202  | Illegal link                                     |
 | 203  | Current chat contributions                       |
 | 204  | `websocket` connection error message             |
 | 205  | Business error information returned              |
+| 305  | Waiting for query                                | Waiting for query                                                             |
+| 306  | Conducting inference                             | Conducting inference                                                          |
+| 307  | Receiving responses                              | Receiving responses                                                           |
+| 308  | Task completed                                   | Task completed.If you want to continue chat, you need to requestSession again |
 
 ### Please note:
 
@@ -83,12 +107,28 @@ const ChatUtils = new ChatClient({
 // This method can be called once
 ChatUtils.requestSession()
   .then(result => {
-    if (result?.transactionHash) {
-      // Signature success
-      // After successfully detecting the signature, call the requestChat method
-    } else {
-      // Signature failed
-    }
+    readableStream.on("data",(data) => {
+        //  Processing transmission data
+        const {code, message} = data
+        if (code === 200) {
+          // Streaming data return for TransactionHash
+          const transactionHash = message
+          ...
+        } else {
+          // Exception information prompt
+          const progressMessage = message
+          ...
+        }
+        //  For detailed code and message, please refer to the above API
+        //  200 :  requestSession transaction Hash
+        //  302 :  Connected to Nesa chain
+        //  303 :  Choosing an inference validator
+        //  304 :  Connecting to the validator
+        //  305 :  Waiting for query
+    })
+    readableStream.on("end",() => {
+        // End of transmission
+    })}
   })
   .catch(error => {
     // Error handling
@@ -133,6 +173,12 @@ ChatUtils.requestChat({
         //  203 : Current query contributions
         //  204 : Websocket connection abnormality error message
         //  205 : Websocket business error information returned
+
+        //  Processing transmission data
+        //  305 : Waiting for query
+        //  306 : Conducting inference
+        //  307 : Receiving responses
+        //  308 : Task completed
     })
     readableStream.on("end",() => {
         // End of transmission

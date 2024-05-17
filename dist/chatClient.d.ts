@@ -35,7 +35,7 @@ declare class ChatClient {
     private offLinesigner;
     private signaturePayment;
     constructor(options: ConfigOptions);
-    initOfflineSigner(): any;
+    initWallet(): any;
     getNesaClient(): any;
     getChainParams(nesaClient: any): any;
     version(): string;
@@ -43,8 +43,8 @@ declare class ChatClient {
     getSignaturePayment(): any;
     checkSinglePaymentAmount(): any;
     requestChatQueue(readableStream: any, question: questionTypes): void;
-    requestAgentInfo(result: any): any;
-    checkSignBroadcastResult(): Promise<unknown>;
+    requestAgentInfo(result: any, readableStream: any): any;
+    checkSignBroadcastResult(readableStream?: any): Promise<unknown>;
     requestSession(): Promise<unknown>;
     requestChat(question: any): Promise<unknown>;
 }

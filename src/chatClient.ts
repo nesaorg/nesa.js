@@ -54,10 +54,14 @@ class ChatClient {
     this.lockAmountDenom = ''
     this.walletName = options.walletName || ''
     window.nesaSdkVersion = sdkVersion
-    this.initOfflineSigner()
+    this.initWallet()
+    // readableStream.push({
+    //   code: 301,
+    //   message: "Connecting to Nesa chain ...",
+    // })
   }
 
-  initOfflineSigner() {
+  initWallet() {
     if (this.lastInitOfflineSignerPromise) {
       return this.lastInitOfflineSignerPromise
     }
@@ -177,7 +181,7 @@ class ChatClient {
   requestChatQueue(readableStream: any, question: questionTypes) {
     this.isChatinging = true;
     this.chatSeq += 1;
-    let isFirstChat = true;
+    let messageTimes = 0;
     try {
       const ws = new WebSocket(this.agentUrl);
       ws.addEventListener("open", () => {
@@ -226,25 +230,40 @@ class ChatClient {
         } catch (error) {
           messageJson = event?.data
         }
-        if (isFirstChat) {
-          if (messageJson !== "ack") {
+        if (messageTimes === 0) {
+          if (messageJson === "ack") {
+            readableStream.push({
+              code: 306,
+              message: "Conducting inference",
+            })
+          } else {
             ws.close();
             readableStream.push({
               code: 202,
               message: "Illegal link",
             });
             this.isChatinging = false;
-          } else {
-            isFirstChat = false;
           }
+          messageTimes += 1;
         } else if (messageJson?.content?.startsWith("[DONE]")) {
           ws.close();
           readableStream.push({
             code: 203,
             message: messageJson?.content?.split("[DONE]")[1],
           });
+          readableStream.push({
+            code: 305,
+            message: "Waiting for query",
+          })
           this.isChatinging = false;
         } else {
+          if (messageTimes === 1) {
+            readableStream.push({
+              code: 307,
+              message: "Receiving responses",
+            })
+            messageTimes += 1
+          }
           const signedMessage = this.checkSinglePaymentAmount();
           const total_payment = {
             amount: this.totalSignedPayment,
@@ -277,6 +296,14 @@ class ChatClient {
       ws.onclose = (error: any) => {
         console.log('onclose: ', error)
         if (error?.reason) {
+          try {
+            if (JSON.parse(error?.reason).code === 1017) {
+              readableStream.push({
+                code: 308,
+                message: "Task completed"
+              });
+            }
+          } catch (err) { }
           readableStream.push({
             code: 205,
             message: error?.reason,
@@ -319,7 +346,7 @@ class ChatClient {
     }
   }
 
-  requestAgentInfo(result: any) {
+  requestAgentInfo(result: any, readableStream: any) {
     if (this.lastGetAgentInfoPromise) {
       return this.lastGetAgentInfoPromise;
     }
@@ -338,12 +365,25 @@ class ChatClient {
               agentWsUrl = agentWsUrl + '/chat';
               agentHeartbeatUrl = agentHeartbeatUrl + '/heartbeat';
             }
+            let firstInitHeartbeat = true
+            readableStream && readableStream.push({
+              code: 304,
+              message: "Connecting to the validator",
+            })
             socket.init({
               ws_url: agentHeartbeatUrl,
               onopen: () => {
-                this.agentUrl = agentWsUrl;
-                this.isRegisterSessioning = false;
-                resolve(result);
+                if (firstInitHeartbeat) {
+                  this.agentUrl = agentWsUrl;
+                  this.isRegisterSessioning = false;
+                  readableStream.push({
+                    code: 305,
+                    message: "Waiting for query",
+                  })
+                  readableStream && readableStream.push(null)
+                  firstInitHeartbeat = false
+                  resolve(result);
+                }
               },
               onerror: () => {
                 reject(new Error("Agent heartbeat packet connection failed"));
@@ -362,11 +402,15 @@ class ChatClient {
     });
   }
 
-  checkSignBroadcastResult() {
+  checkSignBroadcastResult(readableStream?: any) {
     return new Promise((resolve, reject) => {
       this.nesaClient.broadcastRegisterSession()
         .then((result: any) => {
-          resolve(this.requestAgentInfo(result))
+          readableStream && readableStream.push({
+            code: 200,
+            message: result?.transactionHash,
+          })
+          resolve(this.requestAgentInfo(result, readableStream))
         })
         .catch((error: any) => {
           console.log('error: ', error)
@@ -386,42 +430,85 @@ class ChatClient {
       } else if (!this.lockAmount || new BigNumber(this.lockAmount).isNaN()) {
         reject(new Error("LockAmount invalid value"))
       } else {
-        this.initOfflineSigner().then(() => {
-          this.getNesaClient().then((nesaClient: any) => {
-            this.nesaClient = nesaClient
-            this.getChainParams(nesaClient).then((params: any) => {
-              if (params && params?.params) {
-                if (new BigNumber(this.lockAmount).isLessThan(params?.params?.userMinimumLock?.amount)) {
-                  reject(new Error("LockAmount cannot be less than " + params?.params?.userMinimumLock?.amount))
-                } else {
-                  WalletOperation.registerSession(nesaClient, this.modelName, this.lockAmount, params?.params?.userMinimumLock?.denom, this.chainInfo, this.offLinesigner)
-                    .then((result: any) => {
-                      console.log('registerSession-result: ', result)
-                      if (result) {
-                        this.checkSignBroadcastResult()
-                        resolve(result)
+        const readableStream = new Readable({ objectMode: true });
+        readableStream._read = () => { };
+        resolve(readableStream);
+        this.initWallet()
+          .then(() => {
+            this.getNesaClient()
+              .then((nesaClient: any) => {
+                this.nesaClient = nesaClient
+                this.getChainParams(nesaClient)
+                  .then((params: any) => {
+                    if (params && params?.params) {
+                      readableStream.push({
+                        code: 302,
+                        message: "Connected to Nesa chain",
+                      })
+                      if (new BigNumber(this.lockAmount).isLessThan(params?.params?.userMinimumLock?.amount)) {
+                        // reject(new Error("LockAmount cannot be less than " + params?.params?.userMinimumLock?.amount))
+                        readableStream.push({
+                          code: 311,
+                          message: "LockAmount cannot be less than " + params?.params?.userMinimumLock?.amount,
+                        })
                       } else {
-                        this.isRegisterSessioning = false;
-                        reject(result);
+                        WalletOperation.registerSession(nesaClient, this.modelName, this.lockAmount, params?.params?.userMinimumLock?.denom, this.chainInfo, this.offLinesigner)
+                          .then((result: any) => {
+                            console.log('registerSession-result: ', result)
+                            if (result?.transactionHash) {
+                              readableStream.push({
+                                code: 303,
+                                message: "Choosing an inference validator",
+                              })
+                              this.checkSignBroadcastResult(readableStream)
+                              // resolve(result)
+                            } else {
+                              this.isRegisterSessioning = false;
+                              readableStream.push({
+                                code: 312,
+                                message: "Register session failed: " + JSON.stringify(result),
+                              })
+                              // reject(result);
+                            }
+                          })
+                          .catch((error) => {
+                            readableStream.push({
+                              code: 313,
+                              message: error?.message || error.toString()
+                            })
+                            this.isRegisterSessioning = false;
+                            // reject(error);
+                          });
                       }
+                    } else {
+                      readableStream.push({
+                        code: 314,
+                        message: "Chain params loading failed: " + JSON.stringify(params),
+                      })
+                      // reject(new Error("Chain configuration loading failed."))
+                    }
+                  })
+                  .catch((error: any) => {
+                    readableStream.push({
+                      code: 315,
+                      message: "Chain params loading failed: " + JSON.stringify(error),
                     })
-                    .catch((error) => {
-                      console.log("registerSessionError: ", error);
-                      this.isRegisterSessioning = false;
-                      reject(error);
-                    });
-                }
-              } else {
-                reject(new Error("Chain configuration loading failed."))
-              }
-            })
-              .catch((error: any) => {
-                reject(error)
+                    // reject(error)
+                  })
+              }).catch((error: any) => {
+                readableStream.push({
+                  code: 314,
+                  message: "SDK init failed: " + JSON.stringify(error),
+                })
+                // reject(error)
               })
           }).catch((error: any) => {
-            reject(error)
+            readableStream.push({
+              code: 315,
+              message: "Wallet init failed: " + JSON.stringify(error),
+            })
+            // reject(error)
           })
-        }).catch((error: any) => reject(error))
       }
     });
   }
