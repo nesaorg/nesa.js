@@ -28,6 +28,7 @@ class ChatClient {
   public singlePaymentAmount: string;
   public lowBalance: string;
   public lockAmountDenom: string;
+  private walletName: string;
   private chatQueue: any = [];
   private chatSeq = 0;
   private totalUsedPayment = 1;
@@ -39,8 +40,9 @@ class ChatClient {
   private lastNesaClientPromise: any
   private lastUserMinimumLockPromise: any
   private lastGetAgentInfoPromise: any
+  private lastInitOfflineSignerPromise: any
   private nesaClient: any
-  private offLineigner: any
+  private offLinesigner: any
   private signaturePayment: any;
   constructor(options: ConfigOptions) {
     this.modelName = options.modelName;
@@ -50,27 +52,45 @@ class ChatClient {
     this.singlePaymentAmount = options.singlePaymentAmount || defaultSinglePaymentAmount;
     this.lowBalance = options.lowBalance || defaultLowBalance
     this.lockAmountDenom = ''
-    this.initOfflineSigner(options.walletName)
+    this.walletName = options.walletName || ''
+    window.nesaSdkVersion = sdkVersion
+    this.initOfflineSigner()
   }
 
-  async initOfflineSigner(walletName: any) {
-    try {
-      if (walletName === 'npm:@leapwallet/metamask-cosmos-snap') {
-        await suggestChain(this.chainInfo, { force: false });
-        const offlineSigner = new CosmjsOfflineSigner(this.chainInfo.chainId);
-        this.offLineigner = offlineSigner
-      } else if (window?.keplr) {
-        const { keplr } = window;
-        await keplr.experimentalSuggestChain(this.chainInfo);
-        await keplr.enable(this.chainInfo.chainId);
-        this.offLineigner = window.getOfflineSigner!(this.chainInfo.chainId);
-      } else {
-        console.log('No wallet installed, please install keplr or metamask wallet first')
-      }
-      this.getNesaClient()
-    } catch (error) {
-      console.log('initOfflineSigner-error: ', error)
+  initOfflineSigner() {
+    if (this.lastInitOfflineSignerPromise) {
+      return this.lastInitOfflineSignerPromise
     }
+    this.lastInitOfflineSignerPromise = new Promise(async (resolve, reject) => {
+      try {
+        if (this.walletName === 'npm:@leapwallet/metamask-cosmos-snap') {
+          // await window?.ethereum.request({
+          //   method: 'wallet_requestSnaps',
+          //   params: {
+          //     'npm:@leapwallet/metamask-cosmos-snap': {},
+          //   },
+          // });
+          await suggestChain(this.chainInfo, { force: false });
+          const offlineSigner = new CosmjsOfflineSigner(this.chainInfo.chainId);
+          this.offLinesigner = offlineSigner
+          resolve(this.offLinesigner)
+          this.getNesaClient()
+        } else if (window?.keplr) {
+          const { keplr } = window;
+          await keplr.experimentalSuggestChain(this.chainInfo);
+          await keplr.enable(this.chainInfo.chainId);
+          this.offLinesigner = window.getOfflineSigner!(this.chainInfo.chainId);
+          resolve(this.offLinesigner)
+          this.getNesaClient()
+        } else {
+          console.log('No wallet installed, please install keplr or metamask wallet first')
+          reject('No wallet installed, please install keplr or metamask wallet first')
+        }
+      } catch (error) {
+        console.log('initOfflineSigner-error: ', error)
+        reject(error)
+      }
+    })
   }
 
   getNesaClient() {
@@ -78,16 +98,21 @@ class ChatClient {
       return this.lastNesaClientPromise
     }
     console.log('Init nesa client')
-    this.lastNesaClientPromise = new Promise((resolve) => {
-      WalletOperation.getNesaClient(this.chainInfo, this.offLineigner)
-        .then((client) => {
-          resolve(client)
-          this.getChainParams(client)
-        })
-        .catch((error) => {
-          console.log('initNesaClientError: ', error)
-          this.lastNesaClientPromise = undefined
-        })
+    this.lastNesaClientPromise = new Promise((resolve, reject) => {
+      if (this.offLinesigner) {
+        WalletOperation.getNesaClient(this.chainInfo, this.offLinesigner)
+          .then((client) => {
+            resolve(client)
+            this.getChainParams(client)
+          })
+          .catch((error) => {
+            console.log('initNesaClientError: ', error)
+            this.lastNesaClientPromise = undefined
+          })
+      } else {
+        this.lastNesaClientPromise = undefined
+        reject('Wallet connect error')
+      }
     })
   }
 
@@ -139,11 +164,12 @@ class ChatClient {
         this.totalSignedPayment = Number(this.totalUsedPayment);
         return this.getSignaturePayment()
       }
-      // if (new BigNumber(this.totalSignedPayment).plus(this.singlePaymentAmount).isGreaterThan(this.lockAmount)) {
-      //   this.totalSignedPayment = Number(this.lockAmount);
-      //   return this.getSignaturePayment()
-      // }
-      this.totalSignedPayment = Number(new BigNumber(this.totalSignedPayment).plus(this.singlePaymentAmount).toFixed(0, 1));
+      if (new BigNumber(this.totalSignedPayment).plus(this.singlePaymentAmount).isLessThanOrEqualTo(this.lockAmount)) {
+        this.totalSignedPayment = Number(new BigNumber(this.totalSignedPayment).plus(this.singlePaymentAmount).toFixed(0, 1));
+      } else {
+        this.totalSignedPayment = Number(this.lockAmount);
+      }
+      return this.getSignaturePayment()
     }
     return this.getSignaturePayment()
   }
@@ -360,40 +386,42 @@ class ChatClient {
       } else if (!this.lockAmount || new BigNumber(this.lockAmount).isNaN()) {
         reject(new Error("LockAmount invalid value"))
       } else {
-        this.getNesaClient().then((nesaClient: any) => {
-          this.nesaClient = nesaClient
-          this.getChainParams(nesaClient).then((params: any) => {
-            if (params && params?.params) {
-              if (new BigNumber(this.lockAmount).isLessThan(params?.params?.userMinimumLock?.amount)) {
-                reject(new Error("LockAmount cannot be less than " + params?.params?.userMinimumLock?.amount))
-              } else {
-                WalletOperation.registerSession(nesaClient, this.modelName, this.lockAmount, params?.params?.userMinimumLock?.denom, this.chainInfo, this.offLineigner)
-                  .then((result: any) => {
-                    console.log('registerSession-result: ', result)
-                    if (result) {
-                      this.checkSignBroadcastResult()
-                      resolve(result)
-                    } else {
+        this.initOfflineSigner().then(() => {
+          this.getNesaClient().then((nesaClient: any) => {
+            this.nesaClient = nesaClient
+            this.getChainParams(nesaClient).then((params: any) => {
+              if (params && params?.params) {
+                if (new BigNumber(this.lockAmount).isLessThan(params?.params?.userMinimumLock?.amount)) {
+                  reject(new Error("LockAmount cannot be less than " + params?.params?.userMinimumLock?.amount))
+                } else {
+                  WalletOperation.registerSession(nesaClient, this.modelName, this.lockAmount, params?.params?.userMinimumLock?.denom, this.chainInfo, this.offLinesigner)
+                    .then((result: any) => {
+                      console.log('registerSession-result: ', result)
+                      if (result) {
+                        this.checkSignBroadcastResult()
+                        resolve(result)
+                      } else {
+                        this.isRegisterSessioning = false;
+                        reject(result);
+                      }
+                    })
+                    .catch((error) => {
+                      console.log("registerSessionError: ", error);
                       this.isRegisterSessioning = false;
-                      reject(result);
-                    }
-                  })
-                  .catch((error) => {
-                    console.log("registerSessionError: ", error);
-                    this.isRegisterSessioning = false;
-                    reject(error);
-                  });
+                      reject(error);
+                    });
+                }
+              } else {
+                reject(new Error("Chain configuration loading failed."))
               }
-            } else {
-              reject(new Error("Chain configuration loading failed."))
-            }
-          })
-            .catch((error: any) => {
-              reject(error)
             })
-        }).catch((error: any) => {
-          reject(error)
-        })
+              .catch((error: any) => {
+                reject(error)
+              })
+          }).catch((error: any) => {
+            reject(error)
+          })
+        }).catch((error: any) => reject(error))
       }
     });
   }

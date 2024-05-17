@@ -234,7 +234,7 @@ export class NesaClient{
     };
   }
 
-  public async broadcastRegisterSession() {
+  public broadcastRegisterSession() {
     if (!this.signResult) {
       return new Error('Please sign first')
     }

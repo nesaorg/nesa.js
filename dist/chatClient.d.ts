@@ -18,6 +18,7 @@ declare class ChatClient {
     singlePaymentAmount: string;
     lowBalance: string;
     lockAmountDenom: string;
+    private walletName;
     private chatQueue;
     private chatSeq;
     private totalUsedPayment;
@@ -29,11 +30,12 @@ declare class ChatClient {
     private lastNesaClientPromise;
     private lastUserMinimumLockPromise;
     private lastGetAgentInfoPromise;
+    private lastInitOfflineSignerPromise;
     private nesaClient;
-    private offLineigner;
+    private offLinesigner;
     private signaturePayment;
     constructor(options: ConfigOptions);
-    initOfflineSigner(walletName: any): Promise<void>;
+    initOfflineSigner(): any;
     getNesaClient(): any;
     getChainParams(nesaClient: any): any;
     version(): string;
