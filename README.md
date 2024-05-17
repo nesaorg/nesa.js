@@ -29,6 +29,21 @@ const ChatUtils = new ChatClient({
 })
 ```
 
+### Get instructions about chat progress
+
+The SDK will return a total of 7 statuses, see the table below. The specific status will be returned through the interfaces **requestSession** and **requestChat**, the specific status is as follows:
+
+| Code | Message                                | Remark                                                                                                           | Api                |
+| ---- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------ |
+| -    | Connecting to Nesa chain               | Default step. The initialization SDK displays this state by default. The SDK will not output this step.(Default) | -                  |
+| 301  | Connected to Nesa chain                | Nesa chain is connected, and returns after the chain parameters are initialized. (After click 'start inference') | **requestSession** |
+| 302  | Choosing an inference validator        | Signature successful, Choosing an inference validator                                                            | **requestSession** |
+| 303  | Connecting to the validator            | Connecting to the validator                                                                                      | **requestSession** |
+| 304  | Waiting for query                      | Waiting for query                                                                                                | **requestSession** |
+| 305  | Conducting inference                   | Conducting inference (After click 'start query')                                                                 | **requestChat**    |
+| 306  | Receiving responses                    | Receiving responses                                                                                              | **requestChat**    |
+| 307  | Task completed, wait for another query | Task completed, wait for another query                                                                           | **requestChat**    |
+
 #### `requestSession`: First initiate a signature
 
 This is a promise that will call back a **readableStream** object. You can get the conversation information through **readableStream.on('data')**, which will return an object:
@@ -42,13 +57,20 @@ This is a promise that will call back a **readableStream** object. You can get t
 
 Return Code and message
 
-| Code | Message                         | Remark                                                                           |
-| ---- | ------------------------------- | -------------------------------------------------------------------------------- |
-| 200  | TransactionHash                 | requestSession transaction Hash                                                  |
-| 301  | Connected to Nesa chain         | Nesa chain is connected, and returns after the chain parameters are initialized. |
-| 302  | Choosing an inference validator | Signature successful, Choosing an inference validator                            |
-| 303  | Connecting to the validator     | Connecting to the validator                                                      |
-| 304  | Waiting for query               | Waiting for query                                                                |
+| Code | Message                          | Remark                                                                           |
+| ---- | -------------------------------- | -------------------------------------------------------------------------------- |
+| 200  | TransactionHash                  | requestSession transaction Hash                                                  |
+| 301  | Connected to Nesa chain          | Nesa chain is connected, and returns after the chain parameters are initialized. |
+| 302  | Choosing an inference validator  | Signature successful, Choosing an inference validator                            |
+| 303  | Connecting to the validator      | Connecting to the validator                                                      |
+| 304  | Waiting for query                | Waiting for query                                                                |
+| 311  | LockAmount cannot be less than x | LockAmount check                                                                 |
+| 312  | Sign register session failed     | Sign register session failed message                                             |
+| 313  | Register session error           | Register session failed error                                                    |
+| 314  | Chain params format error        | Chain params format error                                                        |
+| 315  | Chain params error               | Chain params error message                                                       |
+| 316  | SDK client init error            | SDK client init error                                                            |
+| 317  | Wallet connect error             | Wallet connect error message                                                     |
 
 #### `requestChat`: Start Conversation Interface
 
@@ -91,21 +113,6 @@ LCD: https://lcd.test.nesa.ai
 
 ```
 
-2. Get instructions about session progress
-
-The SDK will return a total of 7 statuses, see the table below. The specific status will be returned through the interfaces **requestSession** and **requestChat**, the specific status is as follows:
-
-| Code | Message                                | Remark                                                                                                           | Api                |
-| ---- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------ |
-| -    | Connecting to Nesa chain               | Default step. The initialization SDK displays this state by default. The SDK will not output this step.(Default) | -                  |
-| 301  | Connected to Nesa chain                | Nesa chain is connected, and returns after the chain parameters are initialized. (After click 'start inference') | **requestSession** |
-| 302  | Choosing an inference validator        | Signature successful, Choosing an inference validator                                                            | **requestSession** |
-| 303  | Connecting to the validator            | Connecting to the validator                                                                                      | **requestSession** |
-| 304  | Waiting for query                      | Waiting for query                                                                                                | **requestSession** |
-| 305  | Conducting inference                   | Conducting inference (After click 'start query')                                                                 | **requestChat**    |
-| 306  | Receiving responses                    | Receiving responses                                                                                              | **requestChat**    |
-| 307  | Task completed, wait for another query | Task completed, wait for another query                                                                           | **requestChat**    |
-
 ### Example
 
 ```
@@ -133,11 +140,20 @@ ChatUtils.requestSession()
           ...
         }
         //  For detailed code and message, please refer to the above API
-        //  200 :  requestSession transaction Hash
-        //  301 :  Connected to Nesa chain
-        //  302 :  Choosing an inference validator
-        //  303 :  Connecting to the validator
-        //  304 :  Waiting for query
+        //  200 : requestSession transaction Hash
+
+        //  301 : Connected to Nesa chain
+        //  302 : Choosing an inference validator
+        //  303 : Connecting to the validator
+        //  304 : Waiting for query
+
+        //  311 : LockAmount cannot be less than x, LockAmount check
+        //  312 : Sign register session failed
+        //  313 : Register session error
+        //  314 : Chain params format error
+        //  315 : Chain params error
+        //  316 : SDK client init error
+        //  317 : Wallet connect error
     })
     readableStream.on("end",() => {
         // End of transmission

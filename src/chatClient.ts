@@ -108,10 +108,11 @@ class ChatClient {
           .catch((error) => {
             console.log('initNesaClientError: ', error)
             this.lastNesaClientPromise = undefined
+            reject(error)
           })
       } else {
         this.lastNesaClientPromise = undefined
-        reject('Wallet connect error')
+        reject(new Error('Wallet connect error'))
       }
     })
   }
@@ -454,7 +455,7 @@ class ChatClient {
                               this.isRegisterSessioning = false;
                               readableStream.push({
                                 code: 312,
-                                message: "Register session failed: " + JSON.stringify(result),
+                                message: JSON.stringify(result),
                               })
                               // reject(result);
                             }
@@ -471,7 +472,7 @@ class ChatClient {
                     } else {
                       readableStream.push({
                         code: 314,
-                        message: "Chain params loading failed: " + JSON.stringify(params),
+                        message: JSON.stringify(params),
                       })
                       // reject(new Error("Chain configuration loading failed."))
                     }
@@ -479,21 +480,21 @@ class ChatClient {
                   .catch((error: any) => {
                     readableStream.push({
                       code: 315,
-                      message: "Chain params loading failed: " + JSON.stringify(error),
+                      message: error?.message || error.toString(),
                     })
                     // reject(error)
                   })
               }).catch((error: any) => {
                 readableStream.push({
-                  code: 314,
-                  message: "SDK init failed: " + JSON.stringify(error),
+                  code: 316,
+                  message: error?.message || error.toString(),
                 })
                 // reject(error)
               })
           }).catch((error: any) => {
             readableStream.push({
-              code: 315,
-              message: "Wallet init failed: " + JSON.stringify(error),
+              code: 317,
+              message: error?.message || error.toString(),
             })
             // reject(error)
           })
