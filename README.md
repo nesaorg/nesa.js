@@ -68,18 +68,18 @@ This is a promise that will call back a **readableStream** object. You can get t
 
 Return Code and message
 
-| Code | Message                                          | Remark                                                                        |
-| ---- | ------------------------------------------------ | ----------------------------------------------------------------------------- |
+| Code | Message                                          | Remark                                 |
+| ---- | ------------------------------------------------ | -------------------------------------- |
 | 200  | Normal response                                  |
 | 201  | No signature found or the signature has expired. |
 | 202  | Illegal link                                     |
 | 203  | Current chat contributions                       |
 | 204  | `websocket` connection error message             |
 | 205  | Business error information returned              |
-| 305  | Waiting for query                                | Waiting for query                                                             |
-| 306  | Conducting inference                             | Conducting inference                                                          |
-| 307  | Receiving responses                              | Receiving responses                                                           |
-| 308  | Task completed                                   | Task completed.If you want to continue chat, you need to requestSession again |
+| 305  | Waiting for query                                | Waiting for query                      |
+| 306  | Conducting inference                             | Conducting inference                   |
+| 307  | Receiving responses                              | Receiving responses                    |
+| 308  | Task completed, wait for another query           | Task completed, wait for another query |
 
 ### Please note:
 
@@ -175,10 +175,9 @@ ChatUtils.requestChat({
         //  205 : Websocket business error information returned
 
         //  Processing transmission data
-        //  305 : Waiting for query
         //  306 : Conducting inference
         //  307 : Receiving responses
-        //  308 : Task completed
+        //  308 : Task completed, wait for another query
     })
     readableStream.on("end",() => {
         // End of transmission

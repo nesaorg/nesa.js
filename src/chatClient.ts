@@ -252,9 +252,9 @@ class ChatClient {
             message: messageJson?.content?.split("[DONE]")[1],
           });
           readableStream.push({
-            code: 305,
-            message: "Waiting for query",
-          })
+            code: 308,
+            message: "Task completed, wait for another query"
+          });
           this.isChatinging = false;
         } else {
           if (messageTimes === 1) {
@@ -296,14 +296,6 @@ class ChatClient {
       ws.onclose = (error: any) => {
         console.log('onclose: ', error)
         if (error?.reason) {
-          try {
-            if (JSON.parse(error?.reason).code === 1017) {
-              readableStream.push({
-                code: 308,
-                message: "Task completed"
-              });
-            }
-          } catch (err) { }
           readableStream.push({
             code: 205,
             message: error?.reason,
