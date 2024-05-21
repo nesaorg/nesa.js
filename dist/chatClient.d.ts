@@ -9,7 +9,12 @@ interface ConfigOptions {
 }
 interface questionTypes {
     messages: any;
+    model: string;
     stream?: boolean;
+    frequency_penalty?: any;
+    presence_penalty?: any;
+    temperature?: any;
+    top_p?: any;
 }
 declare class ChatClient {
     modelName: string;
@@ -46,6 +51,6 @@ declare class ChatClient {
     requestAgentInfo(result: any, readableStream: any): any;
     checkSignBroadcastResult(readableStream?: any): Promise<unknown>;
     requestSession(): Promise<unknown>;
-    requestChat(question: any): Promise<unknown>;
+    requestChat(question: questionTypes): Promise<unknown>;
 }
 export default ChatClient;

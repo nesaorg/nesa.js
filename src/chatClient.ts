@@ -18,7 +18,12 @@ interface ConfigOptions {
 
 interface questionTypes {
   messages: any
+  model: string
   stream?: boolean
+  frequency_penalty?: any
+  presence_penalty?: any
+  temperature?: any
+  top_p?: any
 }
 
 class ChatClient {
@@ -45,7 +50,7 @@ class ChatClient {
   private offLinesigner: any
   private signaturePayment: any;
   constructor(options: ConfigOptions) {
-    this.modelName = options.modelName;
+    this.modelName = options?.modelName?.toLocaleLowerCase();
     this.chainInfo = options.chainInfo || defaultChainInfo;
     this.lockAmount = options.lockAmount || defaultLockAmount;
     this.signaturePayment = {}
@@ -187,6 +192,7 @@ class ChatClient {
           const questionStr = JSON.stringify({
             stream: true,
             ...question,
+            // model: question?.model?.toLocaleLowerCase()
           });
           if (question.messages && this.assistantRoleName) {
             question.messages = question.messages.map((item: any) => {
@@ -502,9 +508,11 @@ class ChatClient {
     });
   }
 
-  requestChat(question: any) {
+  requestChat(question: questionTypes) {
     return new Promise((resolve, reject) => {
-      if (this.isRegisterSessioning) {
+      if (!question?.model) {
+        reject(new Error('Model is required'))
+      } else if (this.isRegisterSessioning) {
         reject(new Error("Registering session, please wait"));
       } else if (!this.agentUrl) {
         this.checkSignBroadcastResult()
