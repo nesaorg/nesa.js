@@ -2,6 +2,8 @@
 
 The SDK is designed to be integrated into frontend projects, allowing seamless integration with the Keplr wallet extension. It enables users to perform signing and messaging functionalities within the frontend project.
 
+## If using SDK in nodejs environment, please refer to the /demo folder
+
 ### Install & Usage
 
 ```

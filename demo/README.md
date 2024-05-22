@@ -12,7 +12,7 @@ node devnet.ts
 ### Init SDK
 
 ```
-import { ChatClient } from 'nesa-sdk';
+const { ChatClient } = require('nesa.js')
 const ChatUtils = new ChatClient({
   modelName: "",  //  model name
   privateKey: "",   //  private key
@@ -97,7 +97,7 @@ Return Code and message
 ### Example
 
 ```
-const { ChatClient } = require('nesa-sdk')
+const { ChatClient } = require('nesa.js')
 const { exit } = require('process')
 const readline = require("node:readline");
 
