@@ -1,0 +1,10 @@
+{
+    "dependencies": {
+        "@cosmjs/proto-signing": "^0.32.3",
+        "@cosmjs/stargate": "^0.32.3",
+        "nesa.js": "file:../dist"
+    },
+    "devDependencies": {
+        "@types/node": "^20.11.30"
+    }
+}
