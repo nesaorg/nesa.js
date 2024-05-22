@@ -30,8 +30,15 @@ export const socket: ISocket = {
 
     init(handle) {
         socket.ws_url = handle.ws_url;
-        socket.web_socket = new WebSocket(socket.ws_url);
-        socket.web_socket.onopen = () => {
+        let web_socket
+        if (typeof window === 'undefined') {
+            const WebSocket = require('ws');
+            web_socket = new WebSocket(socket.ws_url);
+        } else {
+            web_socket = new WebSocket(socket.ws_url);
+        }
+        socket.web_socket = web_socket;
+        socket.web_socket!.onopen = () => {
             socket.socket_open = true;
             socket.ever_succeeded = true;
             this.signatureData = EncryptUtils.signHeartbeat("hello")
@@ -42,7 +49,7 @@ export const socket: ISocket = {
                 handle?.onopen && handle.onopen()
             }
         }
-        socket.web_socket.onclose = (e) => {
+        socket.web_socket!.onclose = (e) => {
             if (socket.ever_succeeded) {
                 clearInterval(socket.heartbeat_timer)
                 setTimeout(() => {
@@ -52,7 +59,7 @@ export const socket: ISocket = {
                 handle?.onclose && handle.onclose(e)
             }
         }
-        socket.web_socket.onerror = (e) => {
+        socket.web_socket!.onerror = (e) => {
             handle?.onerror && handle.onerror(e)
         }
         return undefined;

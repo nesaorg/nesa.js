@@ -11,7 +11,13 @@ class EncryptUtils {
   public static privateKeyBuf: any;
 
   static generateKey() {
-    const privateKeyBuf = window.crypto.getRandomValues(new Uint8Array(32));
+    let privateKeyBuf
+    if (typeof window === 'undefined') {
+      const crypto = require('crypto');
+      privateKeyBuf = crypto.randomBytes(32);
+    } else {
+      privateKeyBuf = window.crypto.getRandomValues(new Uint8Array(32));
+    }
     this.privateKeyBuf = privateKeyBuf;
     const privateKey = Secp256k1.uint256(privateKeyBuf, 16);
     const publicKey = Secp256k1.generatePublicKeyFromPrivateKeyData(privateKey);

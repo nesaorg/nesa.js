@@ -23,7 +23,8 @@
     "bignumber.js": "^9.1.2",
     "cosmjs-types": "^0.9.0",
     "crypto-js": "^4.2.0",
-    "stream-browserify": "^3.0.0"
+    "stream-browserify": "^3.0.0",
+    "ws": "^7.5.9"
   },
   "devDependencies": {
     "@types/crypto-js": "^4.2.2",

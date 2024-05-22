@@ -6,6 +6,7 @@ import { defaultChainInfo, defaultLockAmount, defaultSinglePaymentAmount, defaul
 import { socket } from "./socket";
 import { BigNumber } from 'bignumber.js';
 import { CosmjsOfflineSigner, suggestChain } from '@leapwallet/cosmos-snap-provider';
+import { DirectSecp256k1Wallet } from "@cosmjs/proto-signing"
 
 interface ConfigOptions {
   modelName: string;
@@ -13,7 +14,8 @@ interface ConfigOptions {
   chainInfo?: ChainInfo;
   walletName?: string;
   singlePaymentAmount?: string;
-  lowBalance?: string
+  lowBalance?: string;
+  privateKey?: string
 }
 
 interface questionTypes {
@@ -49,6 +51,10 @@ class ChatClient {
   private nesaClient: any
   private offLinesigner: any
   private signaturePayment: any;
+  private isBrowser: boolean
+  private privateKey: string
+  private isEverRequestSession: boolean
+
   constructor(options: ConfigOptions) {
     this.modelName = options?.modelName?.toLocaleLowerCase();
     this.chainInfo = options.chainInfo || defaultChainInfo;
@@ -58,7 +64,10 @@ class ChatClient {
     this.lowBalance = options.lowBalance || defaultLowBalance
     this.lockAmountDenom = ''
     this.walletName = options.walletName || ''
-    window.nesaSdkVersion = sdkVersion
+    this.privateKey = options.privateKey || ''
+    this.isEverRequestSession = false
+    this.isBrowser = typeof window !== 'undefined'
+    this.isBrowser && (window.nesaSdkVersion = sdkVersion)
     this.initWallet()
   }
 
@@ -66,36 +75,50 @@ class ChatClient {
     if (this.lastInitOfflineSignerPromise) {
       return this.lastInitOfflineSignerPromise
     }
-    this.lastInitOfflineSignerPromise = new Promise(async (resolve, reject) => {
-      try {
-        if (this.walletName === 'npm:@leapwallet/metamask-cosmos-snap') {
-          // await window?.ethereum.request({
-          //   method: 'wallet_requestSnaps',
-          //   params: {
-          //     'npm:@leapwallet/metamask-cosmos-snap': {},
-          //   },
-          // });
-          await suggestChain(this.chainInfo, { force: false });
-          const offlineSigner = new CosmjsOfflineSigner(this.chainInfo.chainId);
-          this.offLinesigner = offlineSigner
-          resolve(this.offLinesigner)
-          this.getNesaClient()
-        } else if (window?.keplr) {
-          const { keplr } = window;
-          await keplr.experimentalSuggestChain(this.chainInfo);
-          await keplr.enable(this.chainInfo.chainId);
-          this.offLinesigner = window.getOfflineSigner!(this.chainInfo.chainId);
-          resolve(this.offLinesigner)
-          this.getNesaClient()
-        } else {
-          console.log('No wallet installed, please install keplr or metamask wallet first')
-          reject('No wallet installed, please install keplr or metamask wallet first')
+    if (this.isBrowser) {
+      this.lastInitOfflineSignerPromise = new Promise(async (resolve, reject) => {
+        try {
+          if (this.walletName === 'npm:@leapwallet/metamask-cosmos-snap') {
+            // await window?.ethereum.request({
+            //   method: 'wallet_requestSnaps',
+            //   params: {
+            //     'npm:@leapwallet/metamask-cosmos-snap': {},
+            //   },
+            // });
+            await suggestChain(this.chainInfo, { force: false });
+            const offlineSigner = new CosmjsOfflineSigner(this.chainInfo.chainId);
+            this.offLinesigner = offlineSigner
+            resolve(this.offLinesigner)
+            this.getNesaClient()
+          } else if (window?.keplr) {
+            const { keplr } = window;
+            await keplr.experimentalSuggestChain(this.chainInfo);
+            await keplr.enable(this.chainInfo.chainId);
+            this.offLinesigner = window.getOfflineSigner!(this.chainInfo.chainId);
+            resolve(this.offLinesigner)
+            this.getNesaClient()
+          } else {
+            console.log('No wallet installed, please install keplr or metamask wallet first')
+            reject('No wallet installed, please install keplr or metamask wallet first')
+          }
+        } catch (error) {
+          console.log('initOfflineSigner-error: ', error)
+          reject(error)
         }
-      } catch (error) {
-        console.log('initOfflineSigner-error: ', error)
-        reject(error)
-      }
-    })
+      })
+    } else {
+      this.lastInitOfflineSignerPromise = new Promise(async (resolve, reject) => {
+        if (!this.privateKey) {
+          reject('In the node environment, please provide the privateKey')
+        }
+        else {
+          const wallet = await DirectSecp256k1Wallet.fromKey(Buffer.from(this.privateKey, "hex"), 'nesa')
+          this.offLinesigner = wallet
+          resolve(this.offLinesigner)
+          this.getNesaClient()
+        }
+      })
+    }
   }
 
   getNesaClient() {
@@ -185,7 +208,13 @@ class ChatClient {
     this.chatSeq += 1;
     let messageTimes = 0;
     try {
-      const ws = new WebSocket(this.agentUrl);
+      let ws
+      if (this.isBrowser) {
+        ws = new WebSocket(this.agentUrl);
+      } else {
+        const WebSocket = require('ws');
+        ws = new WebSocket(this.agentUrl);
+      }
       ws.addEventListener("open", () => {
         if (ws.readyState === 1) {
           this.signaturePayment = {}
@@ -223,7 +252,6 @@ class ChatClient {
         }
       });
       ws.onmessage = (event: any) => {
-        console.log("onmessage: ", event);
         let messageJson
         try {
           messageJson = JSON.parse(event?.data)
@@ -297,8 +325,8 @@ class ChatClient {
         }
       };
       ws.onclose = (error: any) => {
-        console.log('onclose: ', error)
         if (error?.reason) {
+          console.log('onclose: ', error?.reason)
           readableStream.push({
             code: 205,
             message: error?.reason,
@@ -348,7 +376,6 @@ class ChatClient {
     this.lastGetAgentInfoPromise = new Promise((resolve, reject) => {
       WalletOperation.requestAgentInfo(this.nesaClient, result?.account, this.modelName)
         .then((agentInfo: any) => {
-          console.log('agentInfo: ', agentInfo)
           if (agentInfo && agentInfo?.inferenceAgents?.length > 0) {
             const selectAgent = agentInfo?.inferenceAgents[0]
             let agentWsUrl = selectAgent.url
@@ -399,18 +426,22 @@ class ChatClient {
 
   checkSignBroadcastResult(readableStream?: any) {
     return new Promise((resolve, reject) => {
-      this.nesaClient.broadcastRegisterSession()
-        .then((result: any) => {
-          readableStream && readableStream.push({
-            code: 200,
-            message: result?.transactionHash,
+      if (!this.nesaClient) {
+        reject(new Error('Please wait for the requestSession registration result'))
+      } else {
+        this.nesaClient.broadcastRegisterSession()
+          .then((result: any) => {
+            readableStream && readableStream.push({
+              code: 200,
+              message: result?.transactionHash,
+            })
+            resolve(this.requestAgentInfo(result, readableStream))
           })
-          resolve(this.requestAgentInfo(result, readableStream))
-        })
-        .catch((error: any) => {
-          console.log('error: ', error)
-          reject(error)
-        })
+          .catch((error: any) => {
+            console.log('error: ', error)
+            reject(error)
+          })
+      }
     })
   }
 
@@ -425,6 +456,7 @@ class ChatClient {
       } else if (!this.lockAmount || new BigNumber(this.lockAmount).isNaN()) {
         reject(new Error("LockAmount invalid value"))
       } else {
+        this.isEverRequestSession = true
         const readableStream = new Readable({ objectMode: true });
         readableStream._read = () => { };
         resolve(readableStream);
@@ -514,6 +546,8 @@ class ChatClient {
         reject(new Error('Model is required'))
       } else if (this.isRegisterSessioning) {
         reject(new Error("Registering session, please wait"));
+      } else if (!this.isEverRequestSession) {
+        reject(new Error("Please call requestSession first to complete Session registration"));
       } else if (!this.agentUrl) {
         this.checkSignBroadcastResult()
           .then((result: any) => {

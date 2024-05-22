@@ -6,6 +6,7 @@ interface ConfigOptions {
     walletName?: string;
     singlePaymentAmount?: string;
     lowBalance?: string;
+    privateKey?: string;
 }
 interface questionTypes {
     messages: any;
@@ -39,6 +40,9 @@ declare class ChatClient {
     private nesaClient;
     private offLinesigner;
     private signaturePayment;
+    private isBrowser;
+    private privateKey;
+    private isEverRequestSession;
     constructor(options: ConfigOptions);
     initWallet(): any;
     getNesaClient(): any;
