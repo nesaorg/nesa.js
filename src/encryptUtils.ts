@@ -1,5 +1,5 @@
 import * as CryptoJS from "crypto-js";
-import { Evaluate } from "@idena/vrf-js";
+import { Evaluate } from './utils'
 import * as Secp256k1 from "@lionello/secp256k1-js";
 import WalletOperation from "./walletOperation";
 

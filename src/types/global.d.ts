@@ -1,6 +1,8 @@
 declare module "stream-browserify"
-declare module "@idena/vrf-js"
 declare module "@lionello/secp256k1-js"
+declare module "bn.js"
+declare module "elliptic"
+
 interface Window {
   nesaSdkVersion: string
   ethereum?: any,
