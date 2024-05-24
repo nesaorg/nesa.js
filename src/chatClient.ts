@@ -223,7 +223,7 @@ class ChatClient {
           const questionStr = JSON.stringify({
             stream: true,
             ...question,
-            // model: question?.model?.toLowerCase()
+            model: question?.model?.toLowerCase()
           });
           if (question.messages && this.assistantRoleName) {
             question.messages = question.messages.map((item: any) => {
