@@ -53,9 +53,10 @@ class WalletOperation {
   }
 
   static requestAgentInfo(client: any, agentName: string, modelName: string): Promise<any> {
+    console.log('modelName: ', modelName)
     return new Promise(async (resolve, reject) => {
       if (client) {
-        resolve(client.getInferenceAgent(agentName, modelName, Long.fromNumber(0)))
+        resolve(client.getInferenceAgent(agentName, modelName, Long.fromNumber(0), new Uint8Array()))
       } else {
         reject("Client init failed");
       }

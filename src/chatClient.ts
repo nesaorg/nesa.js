@@ -38,7 +38,7 @@ class ChatClient {
   private walletName: string;
   private chatQueue: any = [];
   private chatSeq = 0;
-  private totalUsedPayment = 1;
+  private totalUsedPayment = 0;
   private totalSignedPayment = 0;
   private isChatinging = false;
   private isRegisterSessioning = false;
@@ -54,9 +54,10 @@ class ChatClient {
   private isBrowser: boolean
   private privateKey: string
   private isEverRequestSession: boolean
+  private tokenPrice: number
 
   constructor(options: ConfigOptions) {
-    this.modelName = options?.modelName?.toLocaleLowerCase();
+    this.modelName = options?.modelName?.toLowerCase();
     this.chainInfo = options.chainInfo || defaultChainInfo;
     this.lockAmount = options.lockAmount || defaultLockAmount;
     this.signaturePayment = {}
@@ -68,6 +69,7 @@ class ChatClient {
     this.isEverRequestSession = false
     this.isBrowser = typeof window !== 'undefined'
     this.isBrowser && (window.nesaSdkVersion = sdkVersion)
+    this.tokenPrice = 0
     this.initWallet()
   }
 
@@ -221,7 +223,7 @@ class ChatClient {
           const questionStr = JSON.stringify({
             stream: true,
             ...question,
-            // model: question?.model?.toLocaleLowerCase()
+            // model: question?.model?.toLowerCase()
           });
           if (question.messages && this.assistantRoleName) {
             question.messages = question.messages.map((item: any) => {
@@ -273,6 +275,7 @@ class ChatClient {
               code: 202,
               message: "Illegal link",
             });
+            readableStream.push(null);
             this.isChatinging = false;
           }
           messageTimes += 1;
@@ -286,6 +289,7 @@ class ChatClient {
             code: 307,
             message: "Task completed, wait for another query"
           });
+          readableStream.push(null);
           this.isChatinging = false;
         } else {
           if (messageTimes === 1) {
@@ -306,13 +310,21 @@ class ChatClient {
               message: messageJson?.content,
               total_payment,
             });
-            const data = JSON.stringify({
-              chat_seq: this.chatSeq,
-              total_payment,
-              signature_payment: signedMessage,
-            });
-            this.totalUsedPayment += 1;
-            ws.send(data);
+            this.totalUsedPayment += this.tokenPrice;
+            if (new BigNumber(this.totalUsedPayment).isGreaterThan(this.lockAmount)) {
+              readableStream.push({
+                code: 205,
+                message: '{"code":1015,"msg":"balance insufficient"}',
+              });
+              ws.close()
+            } else {
+              const data = JSON.stringify({
+                chat_seq: this.chatSeq,
+                total_payment,
+                signature_payment: signedMessage,
+              });
+              ws.send(data);
+            }
           } else {
             readableStream.push({
               code: 201,
@@ -369,6 +381,11 @@ class ChatClient {
     }
   }
 
+  requestCloseHeartbeat() {
+    socket.forceClose = true
+    socket.close()
+  }
+
   requestAgentInfo(result: any, readableStream: any) {
     if (this.lastGetAgentInfoPromise) {
       return this.lastGetAgentInfoPromise;
@@ -376,8 +393,8 @@ class ChatClient {
     this.lastGetAgentInfoPromise = new Promise((resolve, reject) => {
       WalletOperation.requestAgentInfo(this.nesaClient, result?.account, this.modelName)
         .then((agentInfo: any) => {
-          if (agentInfo && agentInfo?.inferenceAgents?.length > 0) {
-            const selectAgent = agentInfo?.inferenceAgents[0]
+          if (agentInfo && agentInfo?.inferenceAgent) {
+            const selectAgent = agentInfo?.inferenceAgent
             let agentWsUrl = selectAgent.url
             let agentHeartbeatUrl = selectAgent.url
             if (selectAgent.url?.endsWith("/")) {
@@ -439,6 +456,11 @@ class ChatClient {
           })
           .catch((error: any) => {
             console.log('error: ', error)
+            readableStream && readableStream.push({
+              code: 318,
+              message: error?.message,
+            })
+            readableStream && readableStream.push(null)
             reject(error)
           })
       }
@@ -453,8 +475,8 @@ class ChatClient {
         reject(new Error("ModelName is null"));
       } else if (this.isRegisterSessioning) {
         reject(new Error("Registering session, please wait"));
-      } else if (!this.lockAmount || new BigNumber(this.lockAmount).isNaN()) {
-        reject(new Error("LockAmount invalid value"))
+      } else if (!this.lockAmount || new BigNumber(this.lockAmount).isNaN() || new BigNumber(this.lockAmount).isLessThan(this.singlePaymentAmount)) {
+        reject(new Error("LockAmount invalid value or less than singlePaymentAmount"))
       } else {
         this.isEverRequestSession = true
         const readableStream = new Readable({ objectMode: true });
@@ -468,6 +490,7 @@ class ChatClient {
                 this.getChainParams(nesaClient)
                   .then((params: any) => {
                     if (params && params?.params) {
+                      this.tokenPrice = params?.params?.tokenPrice?.low
                       readableStream.push({
                         code: 301,
                         message: "Connected to Nesa chain",
@@ -487,7 +510,7 @@ class ChatClient {
                                 code: 302,
                                 message: "Choosing an inference validator",
                               })
-                              this.checkSignBroadcastResult(readableStream)
+                              this.checkSignBroadcastResult(readableStream).catch(() => { })
                               // resolve(result)
                             } else {
                               this.isRegisterSessioning = false;

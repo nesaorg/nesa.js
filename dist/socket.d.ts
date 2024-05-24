@@ -16,6 +16,7 @@ interface ISocket {
     send: (data: any, callback?: Function) => void;
     close: Function;
     signatureData: string;
+    forceClose: boolean;
 }
 export declare const socket: ISocket;
 export {};

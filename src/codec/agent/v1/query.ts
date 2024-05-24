@@ -1,17 +1,16 @@
 /* eslint-disable */
 import {
   Params,
-  Model,
+  InferenceAgent,
+  AgentModelStatus,
   Session,
   SessionStatus,
-  InferenceAgent,
+  AgentModel,
+  agentModelStatusFromJSON,
+  agentModelStatusToJSON,
   sessionStatusFromJSON,
   sessionStatusToJSON,
 } from "./agent";
-import {
-  PageRequest,
-  PageResponse,
-} from "../../cosmos/base/query/v1beta1/pagination";
 import { Timestamp } from "../../google/protobuf/timestamp";
 import Long from "long";
 import _m0 from "protobufjs/minimal";
@@ -25,31 +24,31 @@ export interface QueryParamsResponse {
   params?: Params;
 }
 
-export interface QueryModelRequest {
-  name: string;
-}
-
-export interface QueryModelResponse {
-  model?: Model;
-}
-
-export interface QueryModelAllRequest {
-  pagination?: PageRequest;
-}
-
-export interface QueryModelAllResponse {
-  models: Model[];
-  pagination?: PageResponse;
-}
-
 export interface QueryInferenceAgentRequest {
   account: string;
   modelName: string;
   limit: Long;
+  key: Uint8Array;
 }
 
 export interface QueryInferenceAgentResponse {
+  inferenceAgent?: InferenceAgent;
+  agentModels: AgentModel[];
+  nextKey: Uint8Array;
+}
+
+export interface QueryAgentByModelRequest {
+  modelName: string;
+  status: AgentModelStatus;
+}
+
+export interface ModelAgents {
+  modelName: string;
   inferenceAgents: InferenceAgent[];
+}
+
+export interface QueryAgentByModelResponse {
+  modelAgents: ModelAgents[];
 }
 
 export interface QuerySessionRequest {
@@ -66,10 +65,12 @@ export interface QuerySessionByAgentRequest {
   expireTime?: Date;
   limit: Long;
   orderDesc: boolean;
+  key: Uint8Array;
 }
 
 export interface QuerySessionByAgentResponse {
   sessions: Session[];
+  nextKey: Uint8Array;
 }
 
 export interface QueryVRFSeedRequest {
@@ -182,268 +183,13 @@ export const QueryParamsResponse = {
   },
 };
 
-function createBaseQueryModelRequest(): QueryModelRequest {
-  return { name: "" };
-}
-
-export const QueryModelRequest = {
-  encode(
-    message: QueryModelRequest,
-    writer: _m0.Writer = _m0.Writer.create()
-  ): _m0.Writer {
-    if (message.name !== "") {
-      writer.uint32(10).string(message.name);
-    }
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): QueryModelRequest {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQueryModelRequest();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          message.name = reader.string();
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
-      }
-    }
-    return message;
-  },
-
-  fromJSON(object: any): QueryModelRequest {
-    return {
-      name: isSet(object.name) ? String(object.name) : "",
-    };
-  },
-
-  toJSON(message: QueryModelRequest): unknown {
-    const obj: any = {};
-    message.name !== undefined && (obj.name = message.name);
-    return obj;
-  },
-
-  fromPartial<I extends Exact<DeepPartial<QueryModelRequest>, I>>(
-    object: I
-  ): QueryModelRequest {
-    const message = createBaseQueryModelRequest();
-    message.name = object.name ?? "";
-    return message;
-  },
-};
-
-function createBaseQueryModelResponse(): QueryModelResponse {
-  return { model: undefined };
-}
-
-export const QueryModelResponse = {
-  encode(
-    message: QueryModelResponse,
-    writer: _m0.Writer = _m0.Writer.create()
-  ): _m0.Writer {
-    if (message.model !== undefined) {
-      Model.encode(message.model, writer.uint32(10).fork()).ldelim();
-    }
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): QueryModelResponse {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQueryModelResponse();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          message.model = Model.decode(reader, reader.uint32());
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
-      }
-    }
-    return message;
-  },
-
-  fromJSON(object: any): QueryModelResponse {
-    return {
-      model: isSet(object.model) ? Model.fromJSON(object.model) : undefined,
-    };
-  },
-
-  toJSON(message: QueryModelResponse): unknown {
-    const obj: any = {};
-    message.model !== undefined &&
-      (obj.model = message.model ? Model.toJSON(message.model) : undefined);
-    return obj;
-  },
-
-  fromPartial<I extends Exact<DeepPartial<QueryModelResponse>, I>>(
-    object: I
-  ): QueryModelResponse {
-    const message = createBaseQueryModelResponse();
-    message.model =
-      object.model !== undefined && object.model !== null
-        ? Model.fromPartial(object.model)
-        : undefined;
-    return message;
-  },
-};
-
-function createBaseQueryModelAllRequest(): QueryModelAllRequest {
-  return { pagination: undefined };
-}
-
-export const QueryModelAllRequest = {
-  encode(
-    message: QueryModelAllRequest,
-    writer: _m0.Writer = _m0.Writer.create()
-  ): _m0.Writer {
-    if (message.pagination !== undefined) {
-      PageRequest.encode(message.pagination, writer.uint32(10).fork()).ldelim();
-    }
-    return writer;
-  },
-
-  decode(
-    input: _m0.Reader | Uint8Array,
-    length?: number
-  ): QueryModelAllRequest {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQueryModelAllRequest();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          message.pagination = PageRequest.decode(reader, reader.uint32());
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
-      }
-    }
-    return message;
-  },
-
-  fromJSON(object: any): QueryModelAllRequest {
-    return {
-      pagination: isSet(object.pagination)
-        ? PageRequest.fromJSON(object.pagination)
-        : undefined,
-    };
-  },
-
-  toJSON(message: QueryModelAllRequest): unknown {
-    const obj: any = {};
-    message.pagination !== undefined &&
-      (obj.pagination = message.pagination
-        ? PageRequest.toJSON(message.pagination)
-        : undefined);
-    return obj;
-  },
-
-  fromPartial<I extends Exact<DeepPartial<QueryModelAllRequest>, I>>(
-    object: I
-  ): QueryModelAllRequest {
-    const message = createBaseQueryModelAllRequest();
-    message.pagination =
-      object.pagination !== undefined && object.pagination !== null
-        ? PageRequest.fromPartial(object.pagination)
-        : undefined;
-    return message;
-  },
-};
-
-function createBaseQueryModelAllResponse(): QueryModelAllResponse {
-  return { models: [], pagination: undefined };
-}
-
-export const QueryModelAllResponse = {
-  encode(
-    message: QueryModelAllResponse,
-    writer: _m0.Writer = _m0.Writer.create()
-  ): _m0.Writer {
-    for (const v of message.models) {
-      Model.encode(v!, writer.uint32(10).fork()).ldelim();
-    }
-    if (message.pagination !== undefined) {
-      PageResponse.encode(
-        message.pagination,
-        writer.uint32(18).fork()
-      ).ldelim();
-    }
-    return writer;
-  },
-
-  decode(
-    input: _m0.Reader | Uint8Array,
-    length?: number
-  ): QueryModelAllResponse {
-    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQueryModelAllResponse();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          message.models.push(Model.decode(reader, reader.uint32()));
-          break;
-        case 2:
-          message.pagination = PageResponse.decode(reader, reader.uint32());
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
-      }
-    }
-    return message;
-  },
-
-  fromJSON(object: any): QueryModelAllResponse {
-    return {
-      models: Array.isArray(object?.models)
-        ? object.models.map((e: any) => Model.fromJSON(e))
-        : [],
-      pagination: isSet(object.pagination)
-        ? PageResponse.fromJSON(object.pagination)
-        : undefined,
-    };
-  },
-
-  toJSON(message: QueryModelAllResponse): unknown {
-    const obj: any = {};
-    if (message.models) {
-      obj.models = message.models.map((e) => (e ? Model.toJSON(e) : undefined));
-    } else {
-      obj.models = [];
-    }
-    message.pagination !== undefined &&
-      (obj.pagination = message.pagination
-        ? PageResponse.toJSON(message.pagination)
-        : undefined);
-    return obj;
-  },
-
-  fromPartial<I extends Exact<DeepPartial<QueryModelAllResponse>, I>>(
-    object: I
-  ): QueryModelAllResponse {
-    const message = createBaseQueryModelAllResponse();
-    message.models = object.models?.map((e) => Model.fromPartial(e)) || [];
-    message.pagination =
-      object.pagination !== undefined && object.pagination !== null
-        ? PageResponse.fromPartial(object.pagination)
-        : undefined;
-    return message;
-  },
-};
-
 function createBaseQueryInferenceAgentRequest(): QueryInferenceAgentRequest {
-  return { account: "", modelName: "", limit: Long.UZERO };
+  return {
+    account: "",
+    modelName: "",
+    limit: Long.UZERO,
+    key: new Uint8Array(),
+  };
 }
 
 export const QueryInferenceAgentRequest = {
@@ -459,6 +205,9 @@ export const QueryInferenceAgentRequest = {
     }
     if (!message.limit.isZero()) {
       writer.uint32(24).uint64(message.limit);
+    }
+    if (message.key.length !== 0) {
+      writer.uint32(34).bytes(message.key);
     }
     return writer;
   },
@@ -482,6 +231,9 @@ export const QueryInferenceAgentRequest = {
         case 3:
           message.limit = reader.uint64() as Long;
           break;
+        case 4:
+          message.key = reader.bytes();
+          break;
         default:
           reader.skipType(tag & 7);
           break;
@@ -495,6 +247,7 @@ export const QueryInferenceAgentRequest = {
       account: isSet(object.account) ? String(object.account) : "",
       modelName: isSet(object.modelName) ? String(object.modelName) : "",
       limit: isSet(object.limit) ? Long.fromValue(object.limit) : Long.UZERO,
+      key: isSet(object.key) ? bytesFromBase64(object.key) : new Uint8Array(),
     };
   },
 
@@ -504,6 +257,10 @@ export const QueryInferenceAgentRequest = {
     message.modelName !== undefined && (obj.modelName = message.modelName);
     message.limit !== undefined &&
       (obj.limit = (message.limit || Long.UZERO).toString());
+    message.key !== undefined &&
+      (obj.key = base64FromBytes(
+        message.key !== undefined ? message.key : new Uint8Array()
+      ));
     return obj;
   },
 
@@ -517,12 +274,17 @@ export const QueryInferenceAgentRequest = {
       object.limit !== undefined && object.limit !== null
         ? Long.fromValue(object.limit)
         : Long.UZERO;
+    message.key = object.key ?? new Uint8Array();
     return message;
   },
 };
 
 function createBaseQueryInferenceAgentResponse(): QueryInferenceAgentResponse {
-  return { inferenceAgents: [] };
+  return {
+    inferenceAgent: undefined,
+    agentModels: [],
+    nextKey: new Uint8Array(),
+  };
 }
 
 export const QueryInferenceAgentResponse = {
@@ -530,8 +292,17 @@ export const QueryInferenceAgentResponse = {
     message: QueryInferenceAgentResponse,
     writer: _m0.Writer = _m0.Writer.create()
   ): _m0.Writer {
-    for (const v of message.inferenceAgents) {
-      InferenceAgent.encode(v!, writer.uint32(10).fork()).ldelim();
+    if (message.inferenceAgent !== undefined) {
+      InferenceAgent.encode(
+        message.inferenceAgent,
+        writer.uint32(10).fork()
+      ).ldelim();
+    }
+    for (const v of message.agentModels) {
+      AgentModel.encode(v!, writer.uint32(18).fork()).ldelim();
+    }
+    if (message.nextKey.length !== 0) {
+      writer.uint32(26).bytes(message.nextKey);
     }
     return writer;
   },
@@ -547,6 +318,172 @@ export const QueryInferenceAgentResponse = {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
+          message.inferenceAgent = InferenceAgent.decode(
+            reader,
+            reader.uint32()
+          );
+          break;
+        case 2:
+          message.agentModels.push(AgentModel.decode(reader, reader.uint32()));
+          break;
+        case 3:
+          message.nextKey = reader.bytes();
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryInferenceAgentResponse {
+    return {
+      inferenceAgent: isSet(object.inferenceAgent)
+        ? InferenceAgent.fromJSON(object.inferenceAgent)
+        : undefined,
+      agentModels: Array.isArray(object?.agentModels)
+        ? object.agentModels.map((e: any) => AgentModel.fromJSON(e))
+        : [],
+      nextKey: isSet(object.nextKey)
+        ? bytesFromBase64(object.nextKey)
+        : new Uint8Array(),
+    };
+  },
+
+  toJSON(message: QueryInferenceAgentResponse): unknown {
+    const obj: any = {};
+    message.inferenceAgent !== undefined &&
+      (obj.inferenceAgent = message.inferenceAgent
+        ? InferenceAgent.toJSON(message.inferenceAgent)
+        : undefined);
+    if (message.agentModels) {
+      obj.agentModels = message.agentModels.map((e) =>
+        e ? AgentModel.toJSON(e) : undefined
+      );
+    } else {
+      obj.agentModels = [];
+    }
+    message.nextKey !== undefined &&
+      (obj.nextKey = base64FromBytes(
+        message.nextKey !== undefined ? message.nextKey : new Uint8Array()
+      ));
+    return obj;
+  },
+
+  fromPartial<I extends Exact<DeepPartial<QueryInferenceAgentResponse>, I>>(
+    object: I
+  ): QueryInferenceAgentResponse {
+    const message = createBaseQueryInferenceAgentResponse();
+    message.inferenceAgent =
+      object.inferenceAgent !== undefined && object.inferenceAgent !== null
+        ? InferenceAgent.fromPartial(object.inferenceAgent)
+        : undefined;
+    message.agentModels =
+      object.agentModels?.map((e) => AgentModel.fromPartial(e)) || [];
+    message.nextKey = object.nextKey ?? new Uint8Array();
+    return message;
+  },
+};
+
+function createBaseQueryAgentByModelRequest(): QueryAgentByModelRequest {
+  return { modelName: "", status: 0 };
+}
+
+export const QueryAgentByModelRequest = {
+  encode(
+    message: QueryAgentByModelRequest,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    if (message.modelName !== "") {
+      writer.uint32(10).string(message.modelName);
+    }
+    if (message.status !== 0) {
+      writer.uint32(16).int32(message.status);
+    }
+    return writer;
+  },
+
+  decode(
+    input: _m0.Reader | Uint8Array,
+    length?: number
+  ): QueryAgentByModelRequest {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryAgentByModelRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.modelName = reader.string();
+          break;
+        case 2:
+          message.status = reader.int32() as any;
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryAgentByModelRequest {
+    return {
+      modelName: isSet(object.modelName) ? String(object.modelName) : "",
+      status: isSet(object.status)
+        ? agentModelStatusFromJSON(object.status)
+        : 0,
+    };
+  },
+
+  toJSON(message: QueryAgentByModelRequest): unknown {
+    const obj: any = {};
+    message.modelName !== undefined && (obj.modelName = message.modelName);
+    message.status !== undefined &&
+      (obj.status = agentModelStatusToJSON(message.status));
+    return obj;
+  },
+
+  fromPartial<I extends Exact<DeepPartial<QueryAgentByModelRequest>, I>>(
+    object: I
+  ): QueryAgentByModelRequest {
+    const message = createBaseQueryAgentByModelRequest();
+    message.modelName = object.modelName ?? "";
+    message.status = object.status ?? 0;
+    return message;
+  },
+};
+
+function createBaseModelAgents(): ModelAgents {
+  return { modelName: "", inferenceAgents: [] };
+}
+
+export const ModelAgents = {
+  encode(
+    message: ModelAgents,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    if (message.modelName !== "") {
+      writer.uint32(10).string(message.modelName);
+    }
+    for (const v of message.inferenceAgents) {
+      InferenceAgent.encode(v!, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): ModelAgents {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseModelAgents();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.modelName = reader.string();
+          break;
+        case 2:
           message.inferenceAgents.push(
             InferenceAgent.decode(reader, reader.uint32())
           );
@@ -559,16 +496,18 @@ export const QueryInferenceAgentResponse = {
     return message;
   },
 
-  fromJSON(object: any): QueryInferenceAgentResponse {
+  fromJSON(object: any): ModelAgents {
     return {
+      modelName: isSet(object.modelName) ? String(object.modelName) : "",
       inferenceAgents: Array.isArray(object?.inferenceAgents)
         ? object.inferenceAgents.map((e: any) => InferenceAgent.fromJSON(e))
         : [],
     };
   },
 
-  toJSON(message: QueryInferenceAgentResponse): unknown {
+  toJSON(message: ModelAgents): unknown {
     const obj: any = {};
+    message.modelName !== undefined && (obj.modelName = message.modelName);
     if (message.inferenceAgents) {
       obj.inferenceAgents = message.inferenceAgents.map((e) =>
         e ? InferenceAgent.toJSON(e) : undefined
@@ -579,12 +518,79 @@ export const QueryInferenceAgentResponse = {
     return obj;
   },
 
-  fromPartial<I extends Exact<DeepPartial<QueryInferenceAgentResponse>, I>>(
+  fromPartial<I extends Exact<DeepPartial<ModelAgents>, I>>(
     object: I
-  ): QueryInferenceAgentResponse {
-    const message = createBaseQueryInferenceAgentResponse();
+  ): ModelAgents {
+    const message = createBaseModelAgents();
+    message.modelName = object.modelName ?? "";
     message.inferenceAgents =
       object.inferenceAgents?.map((e) => InferenceAgent.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseQueryAgentByModelResponse(): QueryAgentByModelResponse {
+  return { modelAgents: [] };
+}
+
+export const QueryAgentByModelResponse = {
+  encode(
+    message: QueryAgentByModelResponse,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    for (const v of message.modelAgents) {
+      ModelAgents.encode(v!, writer.uint32(10).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(
+    input: _m0.Reader | Uint8Array,
+    length?: number
+  ): QueryAgentByModelResponse {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryAgentByModelResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.modelAgents.push(ModelAgents.decode(reader, reader.uint32()));
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryAgentByModelResponse {
+    return {
+      modelAgents: Array.isArray(object?.modelAgents)
+        ? object.modelAgents.map((e: any) => ModelAgents.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: QueryAgentByModelResponse): unknown {
+    const obj: any = {};
+    if (message.modelAgents) {
+      obj.modelAgents = message.modelAgents.map((e) =>
+        e ? ModelAgents.toJSON(e) : undefined
+      );
+    } else {
+      obj.modelAgents = [];
+    }
+    return obj;
+  },
+
+  fromPartial<I extends Exact<DeepPartial<QueryAgentByModelResponse>, I>>(
+    object: I
+  ): QueryAgentByModelResponse {
+    const message = createBaseQueryAgentByModelResponse();
+    message.modelAgents =
+      object.modelAgents?.map((e) => ModelAgents.fromPartial(e)) || [];
     return message;
   },
 };
@@ -715,6 +721,7 @@ function createBaseQuerySessionByAgentRequest(): QuerySessionByAgentRequest {
     expireTime: undefined,
     limit: Long.UZERO,
     orderDesc: false,
+    key: new Uint8Array(),
   };
 }
 
@@ -740,6 +747,9 @@ export const QuerySessionByAgentRequest = {
     }
     if (message.orderDesc === true) {
       writer.uint32(40).bool(message.orderDesc);
+    }
+    if (message.key.length !== 0) {
+      writer.uint32(50).bytes(message.key);
     }
     return writer;
   },
@@ -771,6 +781,9 @@ export const QuerySessionByAgentRequest = {
         case 5:
           message.orderDesc = reader.bool();
           break;
+        case 6:
+          message.key = reader.bytes();
+          break;
         default:
           reader.skipType(tag & 7);
           break;
@@ -788,6 +801,7 @@ export const QuerySessionByAgentRequest = {
         : undefined,
       limit: isSet(object.limit) ? Long.fromValue(object.limit) : Long.UZERO,
       orderDesc: isSet(object.orderDesc) ? Boolean(object.orderDesc) : false,
+      key: isSet(object.key) ? bytesFromBase64(object.key) : new Uint8Array(),
     };
   },
 
@@ -801,6 +815,10 @@ export const QuerySessionByAgentRequest = {
     message.limit !== undefined &&
       (obj.limit = (message.limit || Long.UZERO).toString());
     message.orderDesc !== undefined && (obj.orderDesc = message.orderDesc);
+    message.key !== undefined &&
+      (obj.key = base64FromBytes(
+        message.key !== undefined ? message.key : new Uint8Array()
+      ));
     return obj;
   },
 
@@ -816,12 +834,13 @@ export const QuerySessionByAgentRequest = {
         ? Long.fromValue(object.limit)
         : Long.UZERO;
     message.orderDesc = object.orderDesc ?? false;
+    message.key = object.key ?? new Uint8Array();
     return message;
   },
 };
 
 function createBaseQuerySessionByAgentResponse(): QuerySessionByAgentResponse {
-  return { sessions: [] };
+  return { sessions: [], nextKey: new Uint8Array() };
 }
 
 export const QuerySessionByAgentResponse = {
@@ -831,6 +850,9 @@ export const QuerySessionByAgentResponse = {
   ): _m0.Writer {
     for (const v of message.sessions) {
       Session.encode(v!, writer.uint32(10).fork()).ldelim();
+    }
+    if (message.nextKey.length !== 0) {
+      writer.uint32(18).bytes(message.nextKey);
     }
     return writer;
   },
@@ -848,6 +870,9 @@ export const QuerySessionByAgentResponse = {
         case 1:
           message.sessions.push(Session.decode(reader, reader.uint32()));
           break;
+        case 2:
+          message.nextKey = reader.bytes();
+          break;
         default:
           reader.skipType(tag & 7);
           break;
@@ -861,6 +886,9 @@ export const QuerySessionByAgentResponse = {
       sessions: Array.isArray(object?.sessions)
         ? object.sessions.map((e: any) => Session.fromJSON(e))
         : [],
+      nextKey: isSet(object.nextKey)
+        ? bytesFromBase64(object.nextKey)
+        : new Uint8Array(),
     };
   },
 
@@ -873,6 +901,10 @@ export const QuerySessionByAgentResponse = {
     } else {
       obj.sessions = [];
     }
+    message.nextKey !== undefined &&
+      (obj.nextKey = base64FromBytes(
+        message.nextKey !== undefined ? message.nextKey : new Uint8Array()
+      ));
     return obj;
   },
 
@@ -882,6 +914,7 @@ export const QuerySessionByAgentResponse = {
     const message = createBaseQuerySessionByAgentResponse();
     message.sessions =
       object.sessions?.map((e) => Session.fromPartial(e)) || [];
+    message.nextKey = object.nextKey ?? new Uint8Array();
     return message;
   },
 };
@@ -1004,13 +1037,12 @@ export const QueryVRFSeedResponse = {
 
 export interface Query {
   Params(request: QueryParamsRequest): Promise<QueryParamsResponse>;
-  ModelRequest(request: QueryModelRequest): Promise<QueryModelResponse>;
-  ModelRequestAll(
-    request: QueryModelAllRequest
-  ): Promise<QueryModelAllResponse>;
   InferenceAgentRequest(
     request: QueryInferenceAgentRequest
   ): Promise<QueryInferenceAgentResponse>;
+  AgentByModelRequest(
+    request: QueryAgentByModelRequest
+  ): Promise<QueryAgentByModelResponse>;
   SessionRequest(request: QuerySessionRequest): Promise<QuerySessionResponse>;
   SessionByAgentRequest(
     request: QuerySessionByAgentRequest
@@ -1023,9 +1055,8 @@ export class QueryClientImpl implements Query {
   constructor(rpc: Rpc) {
     this.rpc = rpc;
     this.Params = this.Params.bind(this);
-    this.ModelRequest = this.ModelRequest.bind(this);
-    this.ModelRequestAll = this.ModelRequestAll.bind(this);
     this.InferenceAgentRequest = this.InferenceAgentRequest.bind(this);
+    this.AgentByModelRequest = this.AgentByModelRequest.bind(this);
     this.SessionRequest = this.SessionRequest.bind(this);
     this.SessionByAgentRequest = this.SessionByAgentRequest.bind(this);
     this.VRFSeedRequest = this.VRFSeedRequest.bind(this);
@@ -1035,24 +1066,6 @@ export class QueryClientImpl implements Query {
     const promise = this.rpc.request("agent.v1.Query", "Params", data);
     return promise.then((data) =>
       QueryParamsResponse.decode(new _m0.Reader(data))
-    );
-  }
-
-  ModelRequest(request: QueryModelRequest): Promise<QueryModelResponse> {
-    const data = QueryModelRequest.encode(request).finish();
-    const promise = this.rpc.request("agent.v1.Query", "ModelRequest", data);
-    return promise.then((data) =>
-      QueryModelResponse.decode(new _m0.Reader(data))
-    );
-  }
-
-  ModelRequestAll(
-    request: QueryModelAllRequest
-  ): Promise<QueryModelAllResponse> {
-    const data = QueryModelAllRequest.encode(request).finish();
-    const promise = this.rpc.request("agent.v1.Query", "ModelRequestAll", data);
-    return promise.then((data) =>
-      QueryModelAllResponse.decode(new _m0.Reader(data))
     );
   }
 
@@ -1067,6 +1080,20 @@ export class QueryClientImpl implements Query {
     );
     return promise.then((data) =>
       QueryInferenceAgentResponse.decode(new _m0.Reader(data))
+    );
+  }
+
+  AgentByModelRequest(
+    request: QueryAgentByModelRequest
+  ): Promise<QueryAgentByModelResponse> {
+    const data = QueryAgentByModelRequest.encode(request).finish();
+    const promise = this.rpc.request(
+      "agent.v1.Query",
+      "AgentByModelRequest",
+      data
+    );
+    return promise.then((data) =>
+      QueryAgentByModelResponse.decode(new _m0.Reader(data))
     );
   }
 

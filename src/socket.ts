@@ -16,7 +16,8 @@ interface ISocket {
     heartbeat: Function,
     send: (data: any, callback?: Function) => void
     close: Function,
-    signatureData: string
+    signatureData: string,
+    forceClose: boolean
 }
 
 export const socket: ISocket = {
@@ -27,6 +28,7 @@ export const socket: ISocket = {
     heartbeat_timer: undefined,
     heartbeat_interval: 5000,
     signatureData: '',
+    forceClose: false,
 
     init(handle) {
         socket.ws_url = handle.ws_url;
@@ -50,7 +52,7 @@ export const socket: ISocket = {
             }
         }
         socket.web_socket!.onclose = (e) => {
-            if (socket.ever_succeeded) {
+            if (socket.ever_succeeded && !socket.forceClose) {
                 clearInterval(socket.heartbeat_timer)
                 setTimeout(() => {
                     socket.init(handle)

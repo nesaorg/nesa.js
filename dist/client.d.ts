@@ -7,7 +7,7 @@ import { VRF } from './codec/agent/v1/tx';
 import { Payment, Params, SessionStatus } from "./codec/agent/v1/agent";
 import { Coin } from "./codec/cosmos/base/v1beta1/coin";
 import { AgentExtension } from './queries';
-import { QueryModelAllResponse, QueryModelResponse, QueryParamsResponse, QueryInferenceAgentResponse, QuerySessionResponse, QuerySessionByAgentResponse, QueryVRFSeedResponse } from "./codec/agent/v1/query";
+import { QueryParamsResponse, QueryInferenceAgentResponse, QuerySessionResponse, QueryVRFSeedResponse, QuerySessionByAgentResponse } from "./codec/agent/v1/query";
 import { StdFee } from "@cosmjs/amino";
 export type NesaClientOptions = SigningStargateClientOptions & {
     logger?: Logger;
@@ -40,19 +40,14 @@ export declare class NesaClient {
     static connectWithSigner(endpoint: string, signer: OfflineSigner, senderAddress: string, chainId: string | undefined, options: NesaClientOptions): Promise<NesaClient>;
     private constructor();
     updateParams(authority: string, params: Params): Promise<MsgResult>;
-    registerModel(name: string, repositoryUrl: string): Promise<MsgResult>;
-    registerInferenceAgent(url: string, version: Long, lockBalance?: Coin): Promise<MsgResult>;
+    registerInferenceAgent(url: string, version: Long): Promise<MsgResult>;
     broadcastRegisterSession(): any;
     signRegisterSession(sessionId: string, modelName: string, fee: StdFee, lockBalance?: Coin, vrf?: VRF): Promise<any>;
     registerSession(sessionId: string, modelName: string, lockBalance?: Coin, vrf?: VRF): Promise<RegisterSessionResult>;
     submitPayment(sessionId: string, signature: Uint8Array, payment?: Payment): Promise<MsgResult>;
-    claimSession(sessionId: string): Promise<MsgResult>;
-    cancelSession(sessionId: string): Promise<MsgResult>;
-    getModel(name: string): Promise<QueryModelResponse>;
-    getAllModel(key: Uint8Array, offset: Long, limit: Long, countTotal: boolean, reverse: boolean): Promise<QueryModelAllResponse>;
     getParams(): Promise<QueryParamsResponse>;
-    getInferenceAgent(account: string, modelName: string, limit: Long): Promise<QueryInferenceAgentResponse>;
+    getInferenceAgent(account: string, modelName: string, limit: Long, key: Uint8Array): Promise<QueryInferenceAgentResponse>;
     getSession(sessionId: string): Promise<QuerySessionResponse>;
-    getSessionByAgent(account: string, status: SessionStatus, limit: Long, orderDesc: boolean, expireTime?: Date): Promise<QuerySessionByAgentResponse>;
+    getSessionByAgent(account: string, status: SessionStatus, limit: Long, orderDesc: boolean, key: Uint8Array, expireTime?: Date): Promise<QuerySessionByAgentResponse>;
     getVRFSeed(account: string): Promise<QueryVRFSeedResponse>;
 }

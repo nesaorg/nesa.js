@@ -13,26 +13,27 @@ import { Logger, NoopLogger } from './logger';
 import { createDeliverTxFailureMessage } from './utils';
 import {
   MsgUpdateParams,
-  MsgRegisterModel,
+  // MsgRegisterModel,
   MsgRegisterInferenceAgent,
   MsgRegisterSession,
   MsgRegisterSessionResponse,
   MsgSubmitPayment,
   VRF,
-  MsgClaimSession,
-  MsgCancelSession
+  // MsgClaimSession,
+  // MsgCancelSession
 } from './codec/agent/v1/tx';
 import { Payment, Params, SessionStatus } from "./codec/agent/v1/agent";
 import { Coin } from "./codec/cosmos/base/v1beta1/coin";
-import {AgentExtension, setupAgentExtension} from './queries';
+import { AgentExtension, setupAgentExtension } from './queries';
 import {
-  QueryModelAllResponse,
-  QueryModelResponse,
+  // QueryModelAllResponse,
+  // QueryModelResponse,
   QueryParamsResponse,
   QueryInferenceAgentResponse,
   QuerySessionResponse,
-  QuerySessionByAgentResponse,
-  QueryVRFSeedResponse
+  // QuerySessionByAgentResponse,
+  QueryVRFSeedResponse,
+  QuerySessionByAgentResponse
 } from "./codec/agent/v1/query";
 import { StdFee } from "@cosmjs/amino";
 import { TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
@@ -50,7 +51,7 @@ function nesaRegistry(): Registry {
   return new Registry([
     ...defaultStargateTypes,
     ['/agent.v1.MsgUpdateParams', MsgUpdateParams],
-    ['/agent.v1.MsgRegisterModel', MsgRegisterModel],
+    // ['/agent.v1.MsgRegisterModel', MsgRegisterModel],
     ['/agent.v1.MsgRegisterInferenceAgent', MsgRegisterInferenceAgent],
     ['/agent.v1.MsgRegisterSession', MsgRegisterSession],
     ['/agent.v1.MsgSubmitPayment', MsgSubmitPayment],
@@ -71,7 +72,7 @@ export type RegisterSessionResult = MsgResult & {
   readonly account: string;
 }
 
-export class NesaClient{
+export class NesaClient {
   public readonly gasPrice: GasPrice;
   public readonly sign: SigningStargateClient;
   public readonly query: QueryClient &
@@ -104,7 +105,7 @@ export class NesaClient{
       signer,
       mergedOptions
     );
-    if(!chainId){
+    if (!chainId) {
       chainId = await signingClient.getChainId();
     }
     return new NesaClient(
@@ -122,7 +123,7 @@ export class NesaClient{
     senderAddress: string,
     chainId: string,
     options: NesaClientOptions
-  ){
+  ) {
     this.sign = signingClient;
     this.tm = tmClient;
     this.query = QueryClient.withExtensions(
@@ -158,41 +159,9 @@ export class NesaClient{
       [updateParamsMsg],
       'auto'
     );
-    if(isDeliverTxFailure(result)){
+    if (isDeliverTxFailure(result)) {
       throw new Error(createDeliverTxFailureMessage(result));
     }
-    return {
-      events: result.events,
-      transactionHash: result.transactionHash,
-      height: result.height,
-    };
-  }
-
-  public async registerModel(
-    // account: string,
-    name: string,
-    repositoryUrl: string,
-  ): Promise<MsgResult> {
-    this.logger.verbose(`Register Model`);
-    const senderAddress = this.senderAddress;
-    const registerModelMsg = {
-      typeUrl: '/agent.v1.MsgRegisterModel',
-      value: MsgRegisterModel.fromPartial({
-        account: senderAddress,
-        name,
-        repositoryUrl,
-      }),
-    };
-    this.logger.debug('Register Model Message: ', registerModelMsg);
-    const result = await this.sign.signAndBroadcast(
-      senderAddress,
-      [registerModelMsg],
-      "auto"
-    );
-    if(isDeliverTxFailure(result)){
-      throw new Error(createDeliverTxFailureMessage(result));
-    }
-
     return {
       events: result.events,
       transactionHash: result.transactionHash,
@@ -204,7 +173,6 @@ export class NesaClient{
     // account: string,
     url: string,
     version: Long,
-    lockBalance?: Coin,
   ): Promise<MsgResult> {
     this.logger.verbose(`Register Inference Agent`);
     const senderAddress = this.senderAddress;
@@ -213,8 +181,7 @@ export class NesaClient{
       value: MsgRegisterInferenceAgent.fromPartial({
         account: senderAddress,
         url,
-        version,
-        lockBalance
+        version
       }),
     };
     this.logger.debug('Register Model Message: ', registerInferenceAgentMsg);
@@ -223,7 +190,7 @@ export class NesaClient{
       [registerInferenceAgentMsg],
       "auto"
     );
-    if(isDeliverTxFailure(result)){
+    if (isDeliverTxFailure(result)) {
       throw new Error(createDeliverTxFailureMessage(result));
     }
 
@@ -316,7 +283,7 @@ export class NesaClient{
       [registerSessionMsg],
       "auto"
     );
-    if(isDeliverTxFailure(result)){
+    if (isDeliverTxFailure(result)) {
       throw new Error(createDeliverTxFailureMessage(result));
     }
 
@@ -351,7 +318,7 @@ export class NesaClient{
       [submitPaymentMsg],
       "auto"
     );
-    if(isDeliverTxFailure(result)){
+    if (isDeliverTxFailure(result)) {
       throw new Error(createDeliverTxFailureMessage(result));
     }
 
@@ -360,76 +327,6 @@ export class NesaClient{
       transactionHash: result.transactionHash,
       height: result.height,
     };
-  }
-
-  public async claimSession(
-    // account: string,
-    sessionId: string,
-  ): Promise<MsgResult> {
-    this.logger.verbose(`Claim Session`);
-    const senderAddress = this.senderAddress;
-    const claimSessionMsg = {
-      typeUrl: '/agent.v1.MsgClaimSession',
-      value: MsgClaimSession.fromPartial({
-        account: senderAddress,
-        sessionId
-      }),
-    };
-    this.logger.debug('Claim Session Message: ', claimSessionMsg);
-    const result = await this.sign.signAndBroadcast(
-      senderAddress,
-      [claimSessionMsg],
-      "auto"
-    );
-    if(isDeliverTxFailure(result)){
-      throw new Error(createDeliverTxFailureMessage(result));
-    }
-
-    return {
-      events: result.events,
-      transactionHash: result.transactionHash,
-      height: result.height,
-    };
-  }
-
-  public async cancelSession(
-    // account: string,
-    sessionId: string,
-  ): Promise<MsgResult> {
-    this.logger.verbose(`Cancel Session`);
-    const senderAddress = this.senderAddress;
-    const cancelSessionMsg = {
-      typeUrl: '/agent.v1.MsgCancelSession',
-      value: MsgCancelSession.fromPartial({
-        account: senderAddress,
-        sessionId
-      }),
-    };
-    this.logger.debug('Cancel Session Message: ', cancelSessionMsg);
-    const result = await this.sign.signAndBroadcast(
-      senderAddress,
-      [cancelSessionMsg],
-      "auto"
-    );
-    if(isDeliverTxFailure(result)){
-      throw new Error(createDeliverTxFailureMessage(result));
-    }
-
-    return {
-      events: result.events,
-      transactionHash: result.transactionHash,
-      height: result.height,
-    };
-  }
-
-  public async getModel(name: string): Promise<QueryModelResponse> {
-    const result = await this.query.agent.modelRequest(name);
-    return result;
-  }
-
-  public async getAllModel(key: Uint8Array, offset: Long, limit: Long, countTotal: boolean, reverse: boolean): Promise<QueryModelAllResponse> {
-    const result = await this.query.agent.modelRequestAll(key, offset, limit, countTotal, reverse);
-    return result;
   }
 
   public async getParams(): Promise<QueryParamsResponse> {
@@ -437,8 +334,8 @@ export class NesaClient{
     return result;
   }
 
-  public async getInferenceAgent(account: string, modelName: string, limit: Long): Promise<QueryInferenceAgentResponse> {
-    const result = await this.query.agent.inferenceAgentRequest(account, modelName, limit);
+  public async getInferenceAgent(account: string, modelName: string, limit: Long, key: Uint8Array): Promise<QueryInferenceAgentResponse> {
+    const result = await this.query.agent.inferenceAgentRequest(account, modelName, limit, key);
     return result;
   }
 
@@ -447,8 +344,8 @@ export class NesaClient{
     return result;
   }
 
-  public async getSessionByAgent(account: string, status: SessionStatus, limit: Long, orderDesc: boolean, expireTime?: Date): Promise<QuerySessionByAgentResponse> {
-    const result = await this.query.agent.sessionByAgentRequest(account, status, limit, orderDesc, expireTime);
+  public async getSessionByAgent(account: string, status: SessionStatus, limit: Long, orderDesc: boolean, key: Uint8Array, expireTime?: Date): Promise<QuerySessionByAgentResponse> {
+    const result = await this.query.agent.sessionByAgentRequest(account, status, limit, orderDesc, key, expireTime);
     return result;
   }
 

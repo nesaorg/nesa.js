@@ -2,8 +2,8 @@
 import {
   Params,
   InnerValues,
-  Model,
   InferenceAgent,
+  AgentModel,
   Session,
   VrfSeed,
 } from "./agent";
@@ -15,8 +15,8 @@ export const protobufPackage = "agent.v1";
 export interface GenesisState {
   params?: Params;
   innerValues?: InnerValues;
-  models: Model[];
   agents: InferenceAgent[];
+  agentModels: AgentModel[];
   sessions: Session[];
   vrfSeeds: VrfSeed[];
 }
@@ -25,8 +25,8 @@ function createBaseGenesisState(): GenesisState {
   return {
     params: undefined,
     innerValues: undefined,
-    models: [],
     agents: [],
+    agentModels: [],
     sessions: [],
     vrfSeeds: [],
   };
@@ -46,11 +46,11 @@ export const GenesisState = {
         writer.uint32(18).fork()
       ).ldelim();
     }
-    for (const v of message.models) {
-      Model.encode(v!, writer.uint32(26).fork()).ldelim();
-    }
     for (const v of message.agents) {
-      InferenceAgent.encode(v!, writer.uint32(34).fork()).ldelim();
+      InferenceAgent.encode(v!, writer.uint32(26).fork()).ldelim();
+    }
+    for (const v of message.agentModels) {
+      AgentModel.encode(v!, writer.uint32(34).fork()).ldelim();
     }
     for (const v of message.sessions) {
       Session.encode(v!, writer.uint32(42).fork()).ldelim();
@@ -75,10 +75,10 @@ export const GenesisState = {
           message.innerValues = InnerValues.decode(reader, reader.uint32());
           break;
         case 3:
-          message.models.push(Model.decode(reader, reader.uint32()));
+          message.agents.push(InferenceAgent.decode(reader, reader.uint32()));
           break;
         case 4:
-          message.agents.push(InferenceAgent.decode(reader, reader.uint32()));
+          message.agentModels.push(AgentModel.decode(reader, reader.uint32()));
           break;
         case 5:
           message.sessions.push(Session.decode(reader, reader.uint32()));
@@ -100,11 +100,11 @@ export const GenesisState = {
       innerValues: isSet(object.innerValues)
         ? InnerValues.fromJSON(object.innerValues)
         : undefined,
-      models: Array.isArray(object?.models)
-        ? object.models.map((e: any) => Model.fromJSON(e))
-        : [],
       agents: Array.isArray(object?.agents)
         ? object.agents.map((e: any) => InferenceAgent.fromJSON(e))
+        : [],
+      agentModels: Array.isArray(object?.agentModels)
+        ? object.agentModels.map((e: any) => AgentModel.fromJSON(e))
         : [],
       sessions: Array.isArray(object?.sessions)
         ? object.sessions.map((e: any) => Session.fromJSON(e))
@@ -123,17 +123,19 @@ export const GenesisState = {
       (obj.innerValues = message.innerValues
         ? InnerValues.toJSON(message.innerValues)
         : undefined);
-    if (message.models) {
-      obj.models = message.models.map((e) => (e ? Model.toJSON(e) : undefined));
-    } else {
-      obj.models = [];
-    }
     if (message.agents) {
       obj.agents = message.agents.map((e) =>
         e ? InferenceAgent.toJSON(e) : undefined
       );
     } else {
       obj.agents = [];
+    }
+    if (message.agentModels) {
+      obj.agentModels = message.agentModels.map((e) =>
+        e ? AgentModel.toJSON(e) : undefined
+      );
+    } else {
+      obj.agentModels = [];
     }
     if (message.sessions) {
       obj.sessions = message.sessions.map((e) =>
@@ -164,9 +166,10 @@ export const GenesisState = {
       object.innerValues !== undefined && object.innerValues !== null
         ? InnerValues.fromPartial(object.innerValues)
         : undefined;
-    message.models = object.models?.map((e) => Model.fromPartial(e)) || [];
     message.agents =
       object.agents?.map((e) => InferenceAgent.fromPartial(e)) || [];
+    message.agentModels =
+      object.agentModels?.map((e) => AgentModel.fromPartial(e)) || [];
     message.sessions =
       object.sessions?.map((e) => Session.fromPartial(e)) || [];
     message.vrfSeeds =

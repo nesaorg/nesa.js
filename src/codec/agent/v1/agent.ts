@@ -40,11 +40,93 @@ export function agentStatusToJSON(object: AgentStatus): string {
   }
 }
 
+export enum AgentModelStatus {
+  AGENT_MODEL_STATUS_ACTIVE = 0,
+  AGENT_MODEL_STATUS_INACTIVE = 1,
+  UNRECOGNIZED = -1,
+}
+
+export function agentModelStatusFromJSON(object: any): AgentModelStatus {
+  switch (object) {
+    case 0:
+    case "AGENT_MODEL_STATUS_ACTIVE":
+      return AgentModelStatus.AGENT_MODEL_STATUS_ACTIVE;
+    case 1:
+    case "AGENT_MODEL_STATUS_INACTIVE":
+      return AgentModelStatus.AGENT_MODEL_STATUS_INACTIVE;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return AgentModelStatus.UNRECOGNIZED;
+  }
+}
+
+export function agentModelStatusToJSON(object: AgentModelStatus): string {
+  switch (object) {
+    case AgentModelStatus.AGENT_MODEL_STATUS_ACTIVE:
+      return "AGENT_MODEL_STATUS_ACTIVE";
+    case AgentModelStatus.AGENT_MODEL_STATUS_INACTIVE:
+      return "AGENT_MODEL_STATUS_INACTIVE";
+    case AgentModelStatus.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}
+
+export enum ValidatorStatus {
+  ValidatorStatusAbsent = 0,
+  ValidatorStatusSubmit = 1,
+  ValidatorStatusConsistent = 2,
+  ValidatorStatusInconsistent = 3,
+  UNRECOGNIZED = -1,
+}
+
+export function validatorStatusFromJSON(object: any): ValidatorStatus {
+  switch (object) {
+    case 0:
+    case "ValidatorStatusAbsent":
+      return ValidatorStatus.ValidatorStatusAbsent;
+    case 1:
+    case "ValidatorStatusSubmit":
+      return ValidatorStatus.ValidatorStatusSubmit;
+    case 2:
+    case "ValidatorStatusConsistent":
+      return ValidatorStatus.ValidatorStatusConsistent;
+    case 3:
+    case "ValidatorStatusInconsistent":
+      return ValidatorStatus.ValidatorStatusInconsistent;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return ValidatorStatus.UNRECOGNIZED;
+  }
+}
+
+export function validatorStatusToJSON(object: ValidatorStatus): string {
+  switch (object) {
+    case ValidatorStatus.ValidatorStatusAbsent:
+      return "ValidatorStatusAbsent";
+    case ValidatorStatus.ValidatorStatusSubmit:
+      return "ValidatorStatusSubmit";
+    case ValidatorStatus.ValidatorStatusConsistent:
+      return "ValidatorStatusConsistent";
+    case ValidatorStatus.ValidatorStatusInconsistent:
+      return "ValidatorStatusInconsistent";
+    case ValidatorStatus.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}
+
 export enum SessionStatus {
   SESSION_STATUS_DEFAULT = 0,
   SESSION_STATUS_PENDING = 1,
   SESSION_STATUS_SUBMITTED = 2,
-  SESSION_STATUS_CHALLENGE = 3,
+  SESSION_STATUS_CHALLENGE_SUBMIT_CID = 3,
+  SESSION_STATUS_CHALLENGE_SUBMIT_REPLY = 4,
+  SESSION_STATUS_CHALLENGE_SUBMIT_MERKLE = 5,
+  SESSION_STATUS_CHALLENGE_SUBMIT_ORIGIN = 6,
+  SESSION_STATUS_CHALLENGE_ARBITRATION = 7,
   UNRECOGNIZED = -1,
 }
 
@@ -60,8 +142,20 @@ export function sessionStatusFromJSON(object: any): SessionStatus {
     case "SESSION_STATUS_SUBMITTED":
       return SessionStatus.SESSION_STATUS_SUBMITTED;
     case 3:
-    case "SESSION_STATUS_CHALLENGE":
-      return SessionStatus.SESSION_STATUS_CHALLENGE;
+    case "SESSION_STATUS_CHALLENGE_SUBMIT_CID":
+      return SessionStatus.SESSION_STATUS_CHALLENGE_SUBMIT_CID;
+    case 4:
+    case "SESSION_STATUS_CHALLENGE_SUBMIT_REPLY":
+      return SessionStatus.SESSION_STATUS_CHALLENGE_SUBMIT_REPLY;
+    case 5:
+    case "SESSION_STATUS_CHALLENGE_SUBMIT_MERKLE":
+      return SessionStatus.SESSION_STATUS_CHALLENGE_SUBMIT_MERKLE;
+    case 6:
+    case "SESSION_STATUS_CHALLENGE_SUBMIT_ORIGIN":
+      return SessionStatus.SESSION_STATUS_CHALLENGE_SUBMIT_ORIGIN;
+    case 7:
+    case "SESSION_STATUS_CHALLENGE_ARBITRATION":
+      return SessionStatus.SESSION_STATUS_CHALLENGE_ARBITRATION;
     case -1:
     case "UNRECOGNIZED":
     default:
@@ -77,8 +171,16 @@ export function sessionStatusToJSON(object: SessionStatus): string {
       return "SESSION_STATUS_PENDING";
     case SessionStatus.SESSION_STATUS_SUBMITTED:
       return "SESSION_STATUS_SUBMITTED";
-    case SessionStatus.SESSION_STATUS_CHALLENGE:
-      return "SESSION_STATUS_CHALLENGE";
+    case SessionStatus.SESSION_STATUS_CHALLENGE_SUBMIT_CID:
+      return "SESSION_STATUS_CHALLENGE_SUBMIT_CID";
+    case SessionStatus.SESSION_STATUS_CHALLENGE_SUBMIT_REPLY:
+      return "SESSION_STATUS_CHALLENGE_SUBMIT_REPLY";
+    case SessionStatus.SESSION_STATUS_CHALLENGE_SUBMIT_MERKLE:
+      return "SESSION_STATUS_CHALLENGE_SUBMIT_MERKLE";
+    case SessionStatus.SESSION_STATUS_CHALLENGE_SUBMIT_ORIGIN:
+      return "SESSION_STATUS_CHALLENGE_SUBMIT_ORIGIN";
+    case SessionStatus.SESSION_STATUS_CHALLENGE_ARBITRATION:
+      return "SESSION_STATUS_CHALLENGE_ARBITRATION";
     case SessionStatus.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";
@@ -86,13 +188,32 @@ export function sessionStatusToJSON(object: SessionStatus): string {
 }
 
 export interface Params {
+  /** The minimum coins that needs to be locked when an inference agent registers */
   agentMinimumLock?: Coin;
+  /** The minimum coins that needs to be locked when user registers a session */
   userMinimumLock?: Coin;
+  /**
+   * When the session is created, the time period that inference agent can submit payment.
+   * After this period, the session will be automatically canceled.
+   */
   sessionTime?: Duration;
+  /**
+   * When the payment is submitted, the time period can be challenged.
+   * After this time window, the agent receives the reward specified by the session payment.
+   */
   challengeTime?: Duration;
   globalSeed: Uint8Array;
   lowestAgentVersion: Long;
   highestAgentVersion: Long;
+  challengeRate: Long;
+  validatorCount: Long;
+  challengeRound: Long;
+  challengeCidTime?: Duration;
+  challengeReplyTime?: Duration;
+  challengeMerkleTime?: Duration;
+  challengeOriginTime?: Duration;
+  agentValidTime?: Duration;
+  tokenPrice: Long;
 }
 
 export interface InnerValues {
@@ -111,13 +232,18 @@ export interface Prestige {
 
 export interface InferenceAgent {
   account: string;
-  modelName: string;
   url: string;
-  lastHeartbeat?: Date;
   version: Long;
-  status: AgentStatus;
-  lockBalance?: Coin;
   prestige?: Prestige;
+  status: AgentStatus;
+  validUntil?: Date;
+}
+
+export interface AgentModel {
+  account: string;
+  modelName: string;
+  lock: Long;
+  status: AgentModelStatus;
 }
 
 export interface PaymentContribution {
@@ -127,10 +253,32 @@ export interface PaymentContribution {
 }
 
 export interface Payment {
-  chatSeq: Long;
+  tokens: Long[];
   totalPayment?: Coin;
   merkleRoot: Uint8Array;
   contributions: PaymentContribution[];
+}
+
+/** Challenge validator information */
+export interface ChallengeValidator {
+  /** validator account */
+  account: string;
+  /** The hash value of the validator's answer to the question. This value is mixed with the account address */
+  hash: Uint8Array;
+  /** The original hash of the validator's answer to question */
+  originHash: Uint8Array;
+  /** validator’s submit status */
+  status: ValidatorStatus;
+}
+
+export interface ChallengeInfo {
+  questionId: Long;
+  cid: string;
+  answerHash: Uint8Array;
+  cutMerkle: Uint8Array[];
+  /** validators */
+  validators: ChallengeValidator[];
+  hashCount: Long;
 }
 
 export interface Session {
@@ -140,9 +288,11 @@ export interface Session {
   agentAccount: string;
   userLock?: Coin;
   minerLock?: Coin;
+  tokenPrice: Long;
   expirationAt?: Date;
   payment?: Payment;
   status: SessionStatus;
+  challengeInfo: ChallengeInfo[];
 }
 
 export interface VrfSeed {
@@ -159,6 +309,15 @@ function createBaseParams(): Params {
     globalSeed: new Uint8Array(),
     lowestAgentVersion: Long.UZERO,
     highestAgentVersion: Long.UZERO,
+    challengeRate: Long.UZERO,
+    validatorCount: Long.UZERO,
+    challengeRound: Long.UZERO,
+    challengeCidTime: undefined,
+    challengeReplyTime: undefined,
+    challengeMerkleTime: undefined,
+    challengeOriginTime: undefined,
+    agentValidTime: undefined,
+    tokenPrice: Long.UZERO,
   };
 }
 
@@ -187,6 +346,48 @@ export const Params = {
     }
     if (!message.highestAgentVersion.isZero()) {
       writer.uint32(56).uint64(message.highestAgentVersion);
+    }
+    if (!message.challengeRate.isZero()) {
+      writer.uint32(64).uint64(message.challengeRate);
+    }
+    if (!message.validatorCount.isZero()) {
+      writer.uint32(72).uint64(message.validatorCount);
+    }
+    if (!message.challengeRound.isZero()) {
+      writer.uint32(80).uint64(message.challengeRound);
+    }
+    if (message.challengeCidTime !== undefined) {
+      Duration.encode(
+        message.challengeCidTime,
+        writer.uint32(90).fork()
+      ).ldelim();
+    }
+    if (message.challengeReplyTime !== undefined) {
+      Duration.encode(
+        message.challengeReplyTime,
+        writer.uint32(98).fork()
+      ).ldelim();
+    }
+    if (message.challengeMerkleTime !== undefined) {
+      Duration.encode(
+        message.challengeMerkleTime,
+        writer.uint32(106).fork()
+      ).ldelim();
+    }
+    if (message.challengeOriginTime !== undefined) {
+      Duration.encode(
+        message.challengeOriginTime,
+        writer.uint32(114).fork()
+      ).ldelim();
+    }
+    if (message.agentValidTime !== undefined) {
+      Duration.encode(
+        message.agentValidTime,
+        writer.uint32(122).fork()
+      ).ldelim();
+    }
+    if (!message.tokenPrice.isZero()) {
+      writer.uint32(128).uint64(message.tokenPrice);
     }
     return writer;
   },
@@ -219,6 +420,39 @@ export const Params = {
         case 7:
           message.highestAgentVersion = reader.uint64() as Long;
           break;
+        case 8:
+          message.challengeRate = reader.uint64() as Long;
+          break;
+        case 9:
+          message.validatorCount = reader.uint64() as Long;
+          break;
+        case 10:
+          message.challengeRound = reader.uint64() as Long;
+          break;
+        case 11:
+          message.challengeCidTime = Duration.decode(reader, reader.uint32());
+          break;
+        case 12:
+          message.challengeReplyTime = Duration.decode(reader, reader.uint32());
+          break;
+        case 13:
+          message.challengeMerkleTime = Duration.decode(
+            reader,
+            reader.uint32()
+          );
+          break;
+        case 14:
+          message.challengeOriginTime = Duration.decode(
+            reader,
+            reader.uint32()
+          );
+          break;
+        case 15:
+          message.agentValidTime = Duration.decode(reader, reader.uint32());
+          break;
+        case 16:
+          message.tokenPrice = reader.uint64() as Long;
+          break;
         default:
           reader.skipType(tag & 7);
           break;
@@ -249,6 +483,33 @@ export const Params = {
         : Long.UZERO,
       highestAgentVersion: isSet(object.highestAgentVersion)
         ? Long.fromValue(object.highestAgentVersion)
+        : Long.UZERO,
+      challengeRate: isSet(object.challengeRate)
+        ? Long.fromValue(object.challengeRate)
+        : Long.UZERO,
+      validatorCount: isSet(object.validatorCount)
+        ? Long.fromValue(object.validatorCount)
+        : Long.UZERO,
+      challengeRound: isSet(object.challengeRound)
+        ? Long.fromValue(object.challengeRound)
+        : Long.UZERO,
+      challengeCidTime: isSet(object.challengeCidTime)
+        ? Duration.fromJSON(object.challengeCidTime)
+        : undefined,
+      challengeReplyTime: isSet(object.challengeReplyTime)
+        ? Duration.fromJSON(object.challengeReplyTime)
+        : undefined,
+      challengeMerkleTime: isSet(object.challengeMerkleTime)
+        ? Duration.fromJSON(object.challengeMerkleTime)
+        : undefined,
+      challengeOriginTime: isSet(object.challengeOriginTime)
+        ? Duration.fromJSON(object.challengeOriginTime)
+        : undefined,
+      agentValidTime: isSet(object.agentValidTime)
+        ? Duration.fromJSON(object.agentValidTime)
+        : undefined,
+      tokenPrice: isSet(object.tokenPrice)
+        ? Long.fromValue(object.tokenPrice)
         : Long.UZERO,
     };
   },
@@ -283,6 +544,34 @@ export const Params = {
       (obj.highestAgentVersion = (
         message.highestAgentVersion || Long.UZERO
       ).toString());
+    message.challengeRate !== undefined &&
+      (obj.challengeRate = (message.challengeRate || Long.UZERO).toString());
+    message.validatorCount !== undefined &&
+      (obj.validatorCount = (message.validatorCount || Long.UZERO).toString());
+    message.challengeRound !== undefined &&
+      (obj.challengeRound = (message.challengeRound || Long.UZERO).toString());
+    message.challengeCidTime !== undefined &&
+      (obj.challengeCidTime = message.challengeCidTime
+        ? Duration.toJSON(message.challengeCidTime)
+        : undefined);
+    message.challengeReplyTime !== undefined &&
+      (obj.challengeReplyTime = message.challengeReplyTime
+        ? Duration.toJSON(message.challengeReplyTime)
+        : undefined);
+    message.challengeMerkleTime !== undefined &&
+      (obj.challengeMerkleTime = message.challengeMerkleTime
+        ? Duration.toJSON(message.challengeMerkleTime)
+        : undefined);
+    message.challengeOriginTime !== undefined &&
+      (obj.challengeOriginTime = message.challengeOriginTime
+        ? Duration.toJSON(message.challengeOriginTime)
+        : undefined);
+    message.agentValidTime !== undefined &&
+      (obj.agentValidTime = message.agentValidTime
+        ? Duration.toJSON(message.agentValidTime)
+        : undefined);
+    message.tokenPrice !== undefined &&
+      (obj.tokenPrice = (message.tokenPrice || Long.UZERO).toString());
     return obj;
   },
 
@@ -314,6 +603,45 @@ export const Params = {
       object.highestAgentVersion !== undefined &&
       object.highestAgentVersion !== null
         ? Long.fromValue(object.highestAgentVersion)
+        : Long.UZERO;
+    message.challengeRate =
+      object.challengeRate !== undefined && object.challengeRate !== null
+        ? Long.fromValue(object.challengeRate)
+        : Long.UZERO;
+    message.validatorCount =
+      object.validatorCount !== undefined && object.validatorCount !== null
+        ? Long.fromValue(object.validatorCount)
+        : Long.UZERO;
+    message.challengeRound =
+      object.challengeRound !== undefined && object.challengeRound !== null
+        ? Long.fromValue(object.challengeRound)
+        : Long.UZERO;
+    message.challengeCidTime =
+      object.challengeCidTime !== undefined && object.challengeCidTime !== null
+        ? Duration.fromPartial(object.challengeCidTime)
+        : undefined;
+    message.challengeReplyTime =
+      object.challengeReplyTime !== undefined &&
+      object.challengeReplyTime !== null
+        ? Duration.fromPartial(object.challengeReplyTime)
+        : undefined;
+    message.challengeMerkleTime =
+      object.challengeMerkleTime !== undefined &&
+      object.challengeMerkleTime !== null
+        ? Duration.fromPartial(object.challengeMerkleTime)
+        : undefined;
+    message.challengeOriginTime =
+      object.challengeOriginTime !== undefined &&
+      object.challengeOriginTime !== null
+        ? Duration.fromPartial(object.challengeOriginTime)
+        : undefined;
+    message.agentValidTime =
+      object.agentValidTime !== undefined && object.agentValidTime !== null
+        ? Duration.fromPartial(object.agentValidTime)
+        : undefined;
+    message.tokenPrice =
+      object.tokenPrice !== undefined && object.tokenPrice !== null
+        ? Long.fromValue(object.tokenPrice)
         : Long.UZERO;
     return message;
   },
@@ -511,13 +839,11 @@ export const Prestige = {
 function createBaseInferenceAgent(): InferenceAgent {
   return {
     account: "",
-    modelName: "",
     url: "",
-    lastHeartbeat: undefined,
     version: Long.UZERO,
-    status: 0,
-    lockBalance: undefined,
     prestige: undefined,
+    status: 0,
+    validUntil: undefined,
   };
 }
 
@@ -529,29 +855,23 @@ export const InferenceAgent = {
     if (message.account !== "") {
       writer.uint32(10).string(message.account);
     }
-    if (message.modelName !== "") {
-      writer.uint32(18).string(message.modelName);
-    }
     if (message.url !== "") {
-      writer.uint32(26).string(message.url);
-    }
-    if (message.lastHeartbeat !== undefined) {
-      Timestamp.encode(
-        toTimestamp(message.lastHeartbeat),
-        writer.uint32(34).fork()
-      ).ldelim();
+      writer.uint32(18).string(message.url);
     }
     if (!message.version.isZero()) {
-      writer.uint32(40).uint64(message.version);
-    }
-    if (message.status !== 0) {
-      writer.uint32(48).int32(message.status);
-    }
-    if (message.lockBalance !== undefined) {
-      Coin.encode(message.lockBalance, writer.uint32(58).fork()).ldelim();
+      writer.uint32(24).uint64(message.version);
     }
     if (message.prestige !== undefined) {
-      Prestige.encode(message.prestige, writer.uint32(66).fork()).ldelim();
+      Prestige.encode(message.prestige, writer.uint32(34).fork()).ldelim();
+    }
+    if (message.status !== 0) {
+      writer.uint32(40).int32(message.status);
+    }
+    if (message.validUntil !== undefined) {
+      Timestamp.encode(
+        toTimestamp(message.validUntil),
+        writer.uint32(50).fork()
+      ).ldelim();
     }
     return writer;
   },
@@ -567,27 +887,21 @@ export const InferenceAgent = {
           message.account = reader.string();
           break;
         case 2:
-          message.modelName = reader.string();
-          break;
-        case 3:
           message.url = reader.string();
           break;
-        case 4:
-          message.lastHeartbeat = fromTimestamp(
-            Timestamp.decode(reader, reader.uint32())
-          );
-          break;
-        case 5:
+        case 3:
           message.version = reader.uint64() as Long;
           break;
-        case 6:
+        case 4:
+          message.prestige = Prestige.decode(reader, reader.uint32());
+          break;
+        case 5:
           message.status = reader.int32() as any;
           break;
-        case 7:
-          message.lockBalance = Coin.decode(reader, reader.uint32());
-          break;
-        case 8:
-          message.prestige = Prestige.decode(reader, reader.uint32());
+        case 6:
+          message.validUntil = fromTimestamp(
+            Timestamp.decode(reader, reader.uint32())
+          );
           break;
         default:
           reader.skipType(tag & 7);
@@ -600,20 +914,16 @@ export const InferenceAgent = {
   fromJSON(object: any): InferenceAgent {
     return {
       account: isSet(object.account) ? String(object.account) : "",
-      modelName: isSet(object.modelName) ? String(object.modelName) : "",
       url: isSet(object.url) ? String(object.url) : "",
-      lastHeartbeat: isSet(object.lastHeartbeat)
-        ? fromJsonTimestamp(object.lastHeartbeat)
-        : undefined,
       version: isSet(object.version)
         ? Long.fromValue(object.version)
         : Long.UZERO,
-      status: isSet(object.status) ? agentStatusFromJSON(object.status) : 0,
-      lockBalance: isSet(object.lockBalance)
-        ? Coin.fromJSON(object.lockBalance)
-        : undefined,
       prestige: isSet(object.prestige)
         ? Prestige.fromJSON(object.prestige)
+        : undefined,
+      status: isSet(object.status) ? agentStatusFromJSON(object.status) : 0,
+      validUntil: isSet(object.validUntil)
+        ? fromJsonTimestamp(object.validUntil)
         : undefined,
     };
   },
@@ -621,22 +931,17 @@ export const InferenceAgent = {
   toJSON(message: InferenceAgent): unknown {
     const obj: any = {};
     message.account !== undefined && (obj.account = message.account);
-    message.modelName !== undefined && (obj.modelName = message.modelName);
     message.url !== undefined && (obj.url = message.url);
-    message.lastHeartbeat !== undefined &&
-      (obj.lastHeartbeat = message.lastHeartbeat.toISOString());
     message.version !== undefined &&
       (obj.version = (message.version || Long.UZERO).toString());
-    message.status !== undefined &&
-      (obj.status = agentStatusToJSON(message.status));
-    message.lockBalance !== undefined &&
-      (obj.lockBalance = message.lockBalance
-        ? Coin.toJSON(message.lockBalance)
-        : undefined);
     message.prestige !== undefined &&
       (obj.prestige = message.prestige
         ? Prestige.toJSON(message.prestige)
         : undefined);
+    message.status !== undefined &&
+      (obj.status = agentStatusToJSON(message.status));
+    message.validUntil !== undefined &&
+      (obj.validUntil = message.validUntil.toISOString());
     return obj;
   },
 
@@ -645,22 +950,105 @@ export const InferenceAgent = {
   ): InferenceAgent {
     const message = createBaseInferenceAgent();
     message.account = object.account ?? "";
-    message.modelName = object.modelName ?? "";
     message.url = object.url ?? "";
-    message.lastHeartbeat = object.lastHeartbeat ?? undefined;
     message.version =
       object.version !== undefined && object.version !== null
         ? Long.fromValue(object.version)
         : Long.UZERO;
-    message.status = object.status ?? 0;
-    message.lockBalance =
-      object.lockBalance !== undefined && object.lockBalance !== null
-        ? Coin.fromPartial(object.lockBalance)
-        : undefined;
     message.prestige =
       object.prestige !== undefined && object.prestige !== null
         ? Prestige.fromPartial(object.prestige)
         : undefined;
+    message.status = object.status ?? 0;
+    message.validUntil = object.validUntil ?? undefined;
+    return message;
+  },
+};
+
+function createBaseAgentModel(): AgentModel {
+  return { account: "", modelName: "", lock: Long.UZERO, status: 0 };
+}
+
+export const AgentModel = {
+  encode(
+    message: AgentModel,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    if (message.account !== "") {
+      writer.uint32(10).string(message.account);
+    }
+    if (message.modelName !== "") {
+      writer.uint32(18).string(message.modelName);
+    }
+    if (!message.lock.isZero()) {
+      writer.uint32(24).uint64(message.lock);
+    }
+    if (message.status !== 0) {
+      writer.uint32(32).int32(message.status);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): AgentModel {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseAgentModel();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.account = reader.string();
+          break;
+        case 2:
+          message.modelName = reader.string();
+          break;
+        case 3:
+          message.lock = reader.uint64() as Long;
+          break;
+        case 4:
+          message.status = reader.int32() as any;
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): AgentModel {
+    return {
+      account: isSet(object.account) ? String(object.account) : "",
+      modelName: isSet(object.modelName) ? String(object.modelName) : "",
+      lock: isSet(object.lock) ? Long.fromValue(object.lock) : Long.UZERO,
+      status: isSet(object.status)
+        ? agentModelStatusFromJSON(object.status)
+        : 0,
+    };
+  },
+
+  toJSON(message: AgentModel): unknown {
+    const obj: any = {};
+    message.account !== undefined && (obj.account = message.account);
+    message.modelName !== undefined && (obj.modelName = message.modelName);
+    message.lock !== undefined &&
+      (obj.lock = (message.lock || Long.UZERO).toString());
+    message.status !== undefined &&
+      (obj.status = agentModelStatusToJSON(message.status));
+    return obj;
+  },
+
+  fromPartial<I extends Exact<DeepPartial<AgentModel>, I>>(
+    object: I
+  ): AgentModel {
+    const message = createBaseAgentModel();
+    message.account = object.account ?? "";
+    message.modelName = object.modelName ?? "";
+    message.lock =
+      object.lock !== undefined && object.lock !== null
+        ? Long.fromValue(object.lock)
+        : Long.UZERO;
+    message.status = object.status ?? 0;
     return message;
   },
 };
@@ -747,7 +1135,7 @@ export const PaymentContribution = {
 
 function createBasePayment(): Payment {
   return {
-    chatSeq: Long.UZERO,
+    tokens: [],
     totalPayment: undefined,
     merkleRoot: new Uint8Array(),
     contributions: [],
@@ -759,9 +1147,11 @@ export const Payment = {
     message: Payment,
     writer: _m0.Writer = _m0.Writer.create()
   ): _m0.Writer {
-    if (!message.chatSeq.isZero()) {
-      writer.uint32(8).uint64(message.chatSeq);
+    writer.uint32(10).fork();
+    for (const v of message.tokens) {
+      writer.uint64(v);
     }
+    writer.ldelim();
     if (message.totalPayment !== undefined) {
       Coin.encode(message.totalPayment, writer.uint32(18).fork()).ldelim();
     }
@@ -782,7 +1172,14 @@ export const Payment = {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
-          message.chatSeq = reader.uint64() as Long;
+          if ((tag & 7) === 2) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.tokens.push(reader.uint64() as Long);
+            }
+          } else {
+            message.tokens.push(reader.uint64() as Long);
+          }
           break;
         case 2:
           message.totalPayment = Coin.decode(reader, reader.uint32());
@@ -805,9 +1202,9 @@ export const Payment = {
 
   fromJSON(object: any): Payment {
     return {
-      chatSeq: isSet(object.chatSeq)
-        ? Long.fromValue(object.chatSeq)
-        : Long.UZERO,
+      tokens: Array.isArray(object?.tokens)
+        ? object.tokens.map((e: any) => Long.fromValue(e))
+        : [],
       totalPayment: isSet(object.totalPayment)
         ? Coin.fromJSON(object.totalPayment)
         : undefined,
@@ -822,8 +1219,11 @@ export const Payment = {
 
   toJSON(message: Payment): unknown {
     const obj: any = {};
-    message.chatSeq !== undefined &&
-      (obj.chatSeq = (message.chatSeq || Long.UZERO).toString());
+    if (message.tokens) {
+      obj.tokens = message.tokens.map((e) => (e || Long.UZERO).toString());
+    } else {
+      obj.tokens = [];
+    }
     message.totalPayment !== undefined &&
       (obj.totalPayment = message.totalPayment
         ? Coin.toJSON(message.totalPayment)
@@ -844,10 +1244,7 @@ export const Payment = {
 
   fromPartial<I extends Exact<DeepPartial<Payment>, I>>(object: I): Payment {
     const message = createBasePayment();
-    message.chatSeq =
-      object.chatSeq !== undefined && object.chatSeq !== null
-        ? Long.fromValue(object.chatSeq)
-        : Long.UZERO;
+    message.tokens = object.tokens?.map((e) => Long.fromValue(e)) || [];
     message.totalPayment =
       object.totalPayment !== undefined && object.totalPayment !== null
         ? Coin.fromPartial(object.totalPayment)
@@ -860,6 +1257,245 @@ export const Payment = {
   },
 };
 
+function createBaseChallengeValidator(): ChallengeValidator {
+  return {
+    account: "",
+    hash: new Uint8Array(),
+    originHash: new Uint8Array(),
+    status: 0,
+  };
+}
+
+export const ChallengeValidator = {
+  encode(
+    message: ChallengeValidator,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    if (message.account !== "") {
+      writer.uint32(10).string(message.account);
+    }
+    if (message.hash.length !== 0) {
+      writer.uint32(18).bytes(message.hash);
+    }
+    if (message.originHash.length !== 0) {
+      writer.uint32(26).bytes(message.originHash);
+    }
+    if (message.status !== 0) {
+      writer.uint32(32).int32(message.status);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): ChallengeValidator {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseChallengeValidator();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.account = reader.string();
+          break;
+        case 2:
+          message.hash = reader.bytes();
+          break;
+        case 3:
+          message.originHash = reader.bytes();
+          break;
+        case 4:
+          message.status = reader.int32() as any;
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ChallengeValidator {
+    return {
+      account: isSet(object.account) ? String(object.account) : "",
+      hash: isSet(object.hash)
+        ? bytesFromBase64(object.hash)
+        : new Uint8Array(),
+      originHash: isSet(object.originHash)
+        ? bytesFromBase64(object.originHash)
+        : new Uint8Array(),
+      status: isSet(object.status) ? validatorStatusFromJSON(object.status) : 0,
+    };
+  },
+
+  toJSON(message: ChallengeValidator): unknown {
+    const obj: any = {};
+    message.account !== undefined && (obj.account = message.account);
+    message.hash !== undefined &&
+      (obj.hash = base64FromBytes(
+        message.hash !== undefined ? message.hash : new Uint8Array()
+      ));
+    message.originHash !== undefined &&
+      (obj.originHash = base64FromBytes(
+        message.originHash !== undefined ? message.originHash : new Uint8Array()
+      ));
+    message.status !== undefined &&
+      (obj.status = validatorStatusToJSON(message.status));
+    return obj;
+  },
+
+  fromPartial<I extends Exact<DeepPartial<ChallengeValidator>, I>>(
+    object: I
+  ): ChallengeValidator {
+    const message = createBaseChallengeValidator();
+    message.account = object.account ?? "";
+    message.hash = object.hash ?? new Uint8Array();
+    message.originHash = object.originHash ?? new Uint8Array();
+    message.status = object.status ?? 0;
+    return message;
+  },
+};
+
+function createBaseChallengeInfo(): ChallengeInfo {
+  return {
+    questionId: Long.UZERO,
+    cid: "",
+    answerHash: new Uint8Array(),
+    cutMerkle: [],
+    validators: [],
+    hashCount: Long.UZERO,
+  };
+}
+
+export const ChallengeInfo = {
+  encode(
+    message: ChallengeInfo,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    if (!message.questionId.isZero()) {
+      writer.uint32(8).uint64(message.questionId);
+    }
+    if (message.cid !== "") {
+      writer.uint32(18).string(message.cid);
+    }
+    if (message.answerHash.length !== 0) {
+      writer.uint32(26).bytes(message.answerHash);
+    }
+    for (const v of message.cutMerkle) {
+      writer.uint32(34).bytes(v!);
+    }
+    for (const v of message.validators) {
+      ChallengeValidator.encode(v!, writer.uint32(42).fork()).ldelim();
+    }
+    if (!message.hashCount.isZero()) {
+      writer.uint32(48).uint64(message.hashCount);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): ChallengeInfo {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseChallengeInfo();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.questionId = reader.uint64() as Long;
+          break;
+        case 2:
+          message.cid = reader.string();
+          break;
+        case 3:
+          message.answerHash = reader.bytes();
+          break;
+        case 4:
+          message.cutMerkle.push(reader.bytes());
+          break;
+        case 5:
+          message.validators.push(
+            ChallengeValidator.decode(reader, reader.uint32())
+          );
+          break;
+        case 6:
+          message.hashCount = reader.uint64() as Long;
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ChallengeInfo {
+    return {
+      questionId: isSet(object.questionId)
+        ? Long.fromValue(object.questionId)
+        : Long.UZERO,
+      cid: isSet(object.cid) ? String(object.cid) : "",
+      answerHash: isSet(object.answerHash)
+        ? bytesFromBase64(object.answerHash)
+        : new Uint8Array(),
+      cutMerkle: Array.isArray(object?.cutMerkle)
+        ? object.cutMerkle.map((e: any) => bytesFromBase64(e))
+        : [],
+      validators: Array.isArray(object?.validators)
+        ? object.validators.map((e: any) => ChallengeValidator.fromJSON(e))
+        : [],
+      hashCount: isSet(object.hashCount)
+        ? Long.fromValue(object.hashCount)
+        : Long.UZERO,
+    };
+  },
+
+  toJSON(message: ChallengeInfo): unknown {
+    const obj: any = {};
+    message.questionId !== undefined &&
+      (obj.questionId = (message.questionId || Long.UZERO).toString());
+    message.cid !== undefined && (obj.cid = message.cid);
+    message.answerHash !== undefined &&
+      (obj.answerHash = base64FromBytes(
+        message.answerHash !== undefined ? message.answerHash : new Uint8Array()
+      ));
+    if (message.cutMerkle) {
+      obj.cutMerkle = message.cutMerkle.map((e) =>
+        base64FromBytes(e !== undefined ? e : new Uint8Array())
+      );
+    } else {
+      obj.cutMerkle = [];
+    }
+    if (message.validators) {
+      obj.validators = message.validators.map((e) =>
+        e ? ChallengeValidator.toJSON(e) : undefined
+      );
+    } else {
+      obj.validators = [];
+    }
+    message.hashCount !== undefined &&
+      (obj.hashCount = (message.hashCount || Long.UZERO).toString());
+    return obj;
+  },
+
+  fromPartial<I extends Exact<DeepPartial<ChallengeInfo>, I>>(
+    object: I
+  ): ChallengeInfo {
+    const message = createBaseChallengeInfo();
+    message.questionId =
+      object.questionId !== undefined && object.questionId !== null
+        ? Long.fromValue(object.questionId)
+        : Long.UZERO;
+    message.cid = object.cid ?? "";
+    message.answerHash = object.answerHash ?? new Uint8Array();
+    message.cutMerkle = object.cutMerkle?.map((e) => e) || [];
+    message.validators =
+      object.validators?.map((e) => ChallengeValidator.fromPartial(e)) || [];
+    message.hashCount =
+      object.hashCount !== undefined && object.hashCount !== null
+        ? Long.fromValue(object.hashCount)
+        : Long.UZERO;
+    return message;
+  },
+};
+
 function createBaseSession(): Session {
   return {
     sessionId: "",
@@ -868,9 +1504,11 @@ function createBaseSession(): Session {
     agentAccount: "",
     userLock: undefined,
     minerLock: undefined,
+    tokenPrice: Long.UZERO,
     expirationAt: undefined,
     payment: undefined,
     status: 0,
+    challengeInfo: [],
   };
 }
 
@@ -897,17 +1535,23 @@ export const Session = {
     if (message.minerLock !== undefined) {
       Coin.encode(message.minerLock, writer.uint32(50).fork()).ldelim();
     }
+    if (!message.tokenPrice.isZero()) {
+      writer.uint32(56).uint64(message.tokenPrice);
+    }
     if (message.expirationAt !== undefined) {
       Timestamp.encode(
         toTimestamp(message.expirationAt),
-        writer.uint32(58).fork()
+        writer.uint32(66).fork()
       ).ldelim();
     }
     if (message.payment !== undefined) {
-      Payment.encode(message.payment, writer.uint32(66).fork()).ldelim();
+      Payment.encode(message.payment, writer.uint32(74).fork()).ldelim();
     }
     if (message.status !== 0) {
-      writer.uint32(72).int32(message.status);
+      writer.uint32(80).int32(message.status);
+    }
+    for (const v of message.challengeInfo) {
+      ChallengeInfo.encode(v!, writer.uint32(90).fork()).ldelim();
     }
     return writer;
   },
@@ -938,15 +1582,23 @@ export const Session = {
           message.minerLock = Coin.decode(reader, reader.uint32());
           break;
         case 7:
+          message.tokenPrice = reader.uint64() as Long;
+          break;
+        case 8:
           message.expirationAt = fromTimestamp(
             Timestamp.decode(reader, reader.uint32())
           );
           break;
-        case 8:
+        case 9:
           message.payment = Payment.decode(reader, reader.uint32());
           break;
-        case 9:
+        case 10:
           message.status = reader.int32() as any;
+          break;
+        case 11:
+          message.challengeInfo.push(
+            ChallengeInfo.decode(reader, reader.uint32())
+          );
           break;
         default:
           reader.skipType(tag & 7);
@@ -970,6 +1622,9 @@ export const Session = {
       minerLock: isSet(object.minerLock)
         ? Coin.fromJSON(object.minerLock)
         : undefined,
+      tokenPrice: isSet(object.tokenPrice)
+        ? Long.fromValue(object.tokenPrice)
+        : Long.UZERO,
       expirationAt: isSet(object.expirationAt)
         ? fromJsonTimestamp(object.expirationAt)
         : undefined,
@@ -977,6 +1632,9 @@ export const Session = {
         ? Payment.fromJSON(object.payment)
         : undefined,
       status: isSet(object.status) ? sessionStatusFromJSON(object.status) : 0,
+      challengeInfo: Array.isArray(object?.challengeInfo)
+        ? object.challengeInfo.map((e: any) => ChallengeInfo.fromJSON(e))
+        : [],
     };
   },
 
@@ -995,6 +1653,8 @@ export const Session = {
       (obj.minerLock = message.minerLock
         ? Coin.toJSON(message.minerLock)
         : undefined);
+    message.tokenPrice !== undefined &&
+      (obj.tokenPrice = (message.tokenPrice || Long.UZERO).toString());
     message.expirationAt !== undefined &&
       (obj.expirationAt = message.expirationAt.toISOString());
     message.payment !== undefined &&
@@ -1003,6 +1663,13 @@ export const Session = {
         : undefined);
     message.status !== undefined &&
       (obj.status = sessionStatusToJSON(message.status));
+    if (message.challengeInfo) {
+      obj.challengeInfo = message.challengeInfo.map((e) =>
+        e ? ChallengeInfo.toJSON(e) : undefined
+      );
+    } else {
+      obj.challengeInfo = [];
+    }
     return obj;
   },
 
@@ -1020,12 +1687,18 @@ export const Session = {
       object.minerLock !== undefined && object.minerLock !== null
         ? Coin.fromPartial(object.minerLock)
         : undefined;
+    message.tokenPrice =
+      object.tokenPrice !== undefined && object.tokenPrice !== null
+        ? Long.fromValue(object.tokenPrice)
+        : Long.UZERO;
     message.expirationAt = object.expirationAt ?? undefined;
     message.payment =
       object.payment !== undefined && object.payment !== null
         ? Payment.fromPartial(object.payment)
         : undefined;
     message.status = object.status ?? 0;
+    message.challengeInfo =
+      object.challengeInfo?.map((e) => ChallengeInfo.fromPartial(e)) || [];
     return message;
   },
 };

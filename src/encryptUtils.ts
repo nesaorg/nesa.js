@@ -52,7 +52,7 @@ class EncryptUtils {
       const sortSignDataHash = CryptoJS.SHA256(message).toString(CryptoJS.enc.Hex);
       messageData = `${sortSignDataHash}|${chatSeq}`;
     } else {
-      messageData = `${chatSeq}|${message}`
+      messageData = message
     }
     const signDataHash = CryptoJS.SHA256(messageData).toString(CryptoJS.enc.Hex);
     const digest = Secp256k1.uint256(signDataHash, 16);

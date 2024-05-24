@@ -43,6 +43,7 @@ declare class ChatClient {
     private isBrowser;
     private privateKey;
     private isEverRequestSession;
+    private tokenPrice;
     constructor(options: ConfigOptions);
     initWallet(): any;
     getNesaClient(): any;
@@ -52,6 +53,7 @@ declare class ChatClient {
     getSignaturePayment(): any;
     checkSinglePaymentAmount(): any;
     requestChatQueue(readableStream: any, question: questionTypes): void;
+    requestCloseHeartbeat(): void;
     requestAgentInfo(result: any, readableStream: any): any;
     checkSignBroadcastResult(readableStream?: any): Promise<unknown>;
     requestSession(): Promise<unknown>;
