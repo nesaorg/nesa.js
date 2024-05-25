@@ -62,6 +62,7 @@ Return Code and message
 | Code | Message                          | Remark                                                                           |
 | ---- | -------------------------------- | -------------------------------------------------------------------------------- |
 | 200  | TransactionHash                  | requestSession transaction Hash                                                  |
+| 201  | sessionId                        | requestSession sessionId                                                         |
 | 301  | Connected to Nesa chain          | Nesa chain is connected, and returns after the chain parameters are initialized. |
 | 302  | Choosing an inference validator  | Signature successful, Choosing an inference validator                            |
 | 303  | Connecting to the validator      | Connecting to the validator                                                      |
@@ -73,7 +74,7 @@ Return Code and message
 | 315  | Chain params error               | Chain params error message                                                       |
 | 316  | SDK client init error            | SDK client init error                                                            |
 | 317  | Wallet connect error             | Wallet connect error message                                                     |
-| 318  | Broadcast tx error               | Broadcast tx error message                                                     |
+| 318  | Broadcast tx error               | Broadcast tx error message                                                       |
 
 #### `requestChat`: Start Conversation Interface
 
@@ -94,12 +95,12 @@ Return Code and message
 
 | Code | Message                                          | Remark                                 |
 | ---- | ------------------------------------------------ | -------------------------------------- |
-| 200  | Normal response                                  |
-| 201  | No signature found or the signature has expired. |
-| 202  | Illegal link                                     |
-| 203  | Current chat contributions                       |
-| 204  | `websocket` connection error message             |
-| 205  | Business error information returned              |
+| 200  | Normal response                                  |                                        |
+| 201  | No signature found or the signature has expired. |                                        |
+| 202  | Illegal link                                     |                                        |
+| 203  | Current chat contributions                       |                                        |
+| 204  | `websocket` connection error message             |                                        |
+| 205  | Business error information returned              |                                        |
 | 305  | Conducting inference                             | Conducting inference                   |
 | 306  | Receiving responses                              | Receiving responses                    |
 | 307  | Task completed, wait for another query           | Task completed, wait for another query |
@@ -144,6 +145,7 @@ ChatUtils.requestSession()
         }
         //  For detailed code and message, please refer to the above API
         //  200 : requestSession transaction Hash
+        //  201 : requestSession sessionId
 
         //  301 : Connected to Nesa chain
         //  302 : Choosing an inference validator

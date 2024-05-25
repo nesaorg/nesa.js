@@ -255,7 +255,10 @@ export class NesaClient {
     this.signResult = signResult
     const hex = Buffer.from(Uint8Array.from(TxRaw.encode(this.signResult).finish())).toString('hex')
     this.broadcastRegisterSession()
-    return { transactionHash: toHex(sha256(Buffer.from(hex, 'hex'))).toUpperCase() }
+    return {
+      sessionId,
+      transactionHash: toHex(sha256(Buffer.from(hex, 'hex'))).toUpperCase()
+    }
   }
 
   public async registerSession(

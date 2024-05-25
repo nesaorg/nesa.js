@@ -441,7 +441,7 @@ class ChatClient {
     });
   }
 
-  checkSignBroadcastResult(readableStream?: any) {
+  checkSignBroadcastResult(readableStream?: any, sessionId?: string) {
     return new Promise((resolve, reject) => {
       if (!this.nesaClient) {
         reject(new Error('Please wait for the requestSession registration result'))
@@ -451,6 +451,10 @@ class ChatClient {
             readableStream && readableStream.push({
               code: 200,
               message: result?.transactionHash,
+            })
+            readableStream && readableStream.push({
+              code: 201,
+              message: sessionId,
             })
             resolve(this.requestAgentInfo(result, readableStream))
           })
@@ -505,12 +509,12 @@ class ChatClient {
                         WalletOperation.registerSession(nesaClient, this.modelName, this.lockAmount, params?.params?.userMinimumLock?.denom, this.chainInfo, this.offLinesigner)
                           .then((result: any) => {
                             console.log('registerSession-result: ', result)
-                            if (result?.transactionHash) {
+                            if (result?.transactionHash && result?.sessionId) {
                               readableStream.push({
                                 code: 302,
                                 message: "Choosing an inference validator",
                               })
-                              this.checkSignBroadcastResult(readableStream).catch(() => { })
+                              this.checkSignBroadcastResult(readableStream, result?.sessionId).catch(() => { })
                               // resolve(result)
                             } else {
                               this.isRegisterSessioning = false;
