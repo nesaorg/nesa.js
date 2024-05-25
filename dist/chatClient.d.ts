@@ -55,7 +55,7 @@ declare class ChatClient {
     requestChatQueue(readableStream: any, question: questionTypes): void;
     requestCloseHeartbeat(): void;
     requestAgentInfo(result: any, readableStream: any): any;
-    checkSignBroadcastResult(readableStream?: any, sessionId?: string): Promise<unknown>;
+    checkSignBroadcastResult(readableStream?: any): Promise<unknown>;
     requestSession(): Promise<unknown>;
     requestChat(question: questionTypes): Promise<unknown>;
 }
