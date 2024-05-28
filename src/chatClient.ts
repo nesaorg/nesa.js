@@ -26,6 +26,7 @@ interface questionTypes {
   presence_penalty?: any
   temperature?: any
   top_p?: any
+  llm_session_id?: string;
 }
 
 class ChatClient {
@@ -220,11 +221,21 @@ class ChatClient {
       ws.addEventListener("open", () => {
         if (ws.readyState === 1) {
           this.signaturePayment = {}
-          const questionStr = JSON.stringify({
+          let questionStr = JSON.stringify({
             stream: true,
             ...question,
             model: question?.model?.toLowerCase()
           });
+          if (question.llm_session_id) {
+            const reformatQuestionStr = {
+              stream: true,
+              ...question,
+              model: question?.model?.toLowerCase(),
+              session_id: question.llm_session_id
+            }
+            delete reformatQuestionStr.llm_session_id
+            questionStr = JSON.stringify(reformatQuestionStr);
+          }
           if (question.messages && this.assistantRoleName) {
             question.messages = question.messages.map((item: any) => {
               if (item.role === 'assistant') {
@@ -308,6 +319,7 @@ class ChatClient {
             readableStream.push({
               code: 200,
               message: messageJson?.content,
+              llm_session_id: messageJson?.session_id || '',
               total_payment,
             });
             this.totalUsedPayment += this.tokenPrice;
@@ -501,7 +513,7 @@ class ChatClient {
                         WalletOperation.registerSession(nesaClient, this.modelName, this.lockAmount, params?.params?.userMinimumLock?.denom, this.chainInfo, this.offLinesigner)
                           .then((result: any) => {
                             console.log('registerSession-result: ', result)
-                            if (result?.transactionHash && result?.sessionId) {
+                            if (result?.transactionHash) {
                               readableStream.push({
                                 code: 302,
                                 message: "Choosing an inference validator",
@@ -509,10 +521,6 @@ class ChatClient {
                               readableStream.push({
                                 code: 200,
                                 message: result?.transactionHash,
-                              })
-                              readableStream.push({
-                                code: 201,
-                                message: result?.sessionId,
                               })
                               this.checkSignBroadcastResult(readableStream).catch(() => { })
                               // resolve(result)

@@ -28,6 +28,7 @@ const ChatUtils = new ChatClient({
   lockAmount: "", //  optional. lock amount , default 1000 * tokenPrice
   singleLockUpAmount: ""  //  optional. Number of single signed payment , default 100 * tokenPrice
   lowBalance: ""  //  optional. The remaining unused amount of payment. If unused payment is lower than this value, payment will be regenerated., default 10 * tokenPrice
+  llm_session_id: ""  // optional. llm_session_id
 })
 ```
 
@@ -62,7 +63,6 @@ Return Code and message
 | Code | Message                          | Remark                                                                           |
 | ---- | -------------------------------- | -------------------------------------------------------------------------------- |
 | 200  | TransactionHash                  | requestSession transaction Hash                                                  |
-| 201  | sessionId                        | requestSession sessionId                                                         |
 | 301  | Connected to Nesa chain          | Nesa chain is connected, and returns after the chain parameters are initialized. |
 | 302  | Choosing an inference validator  | Signature successful, Choosing an inference validator                            |
 | 303  | Connecting to the validator      | Connecting to the validator                                                      |
@@ -189,9 +189,10 @@ ChatUtils.requestChat({
   .then(readableStream => {
     readableStream.on("data",(data) => {
         //  Processing transmission data
-        const {code, message, total_payment} = data
+        const {code, message, total_payment, llm_session_id} = data
         if (code === 200) {
           // Streaming data return for normal conversation
+          // llm_session_id will only be returned when the code is 200.
           const nextChatResponse = message
           const totalPayment = total_payment
           ...
