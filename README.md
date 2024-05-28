@@ -23,9 +23,9 @@ npm link nesa-sdk
 import { ChatClient } from 'nesa-sdk';
 const ChatUtils = new ChatClient({
   modelName: "",  //  model name
-  lockAmount: "", //  optional. lock amount , default 1000 * tokenPrice
   chainInfo: {}   //  optional. chainInfo , Refer to the defaultChainInfo format in src/default.config.ts
   walletName: ""  //  optional. walletName , default keplr , When using metamask, please set this parameter to: npm:@leapwallet/metamask-cosmos-snap
+  lockAmount: "", //  optional. lock amount , default 1000 * tokenPrice
   singleLockUpAmount: ""  //  optional. Number of single signed payment , default 100 * tokenPrice
   lowBalance: ""  //  optional. The remaining unused amount of payment. If unused payment is lower than this value, payment will be regenerated., default 10 * tokenPrice
 })
