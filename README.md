@@ -28,7 +28,6 @@ const ChatUtils = new ChatClient({
   lockAmount: "", //  optional. lock amount , default 1000 * tokenPrice
   singleLockUpAmount: ""  //  optional. Number of single signed payment , default 100 * tokenPrice
   lowBalance: ""  //  optional. The remaining unused amount of payment. If unused payment is lower than this value, payment will be regenerated., default 10 * tokenPrice
-  llm_session_id: ""  // optional. llm_session_id
 })
 ```
 
@@ -78,16 +77,41 @@ Return Code and message
 
 #### `requestChat`: Start Conversation Interface
 
+This interface is used for initiating a conversation, with the parameters:
+```
+  {
+  "messages": [
+    // ...you can add history messages
+    //  Please follow the following rules to set role:
+    //  Use "user" for user queries (unless you know that the model side uses a different name);
+    //  The content of the assistant's answer is always returned using "assistant".
+    //  For example:
+    {'role': 'user', 'content': 'user question 1'},
+    {'role': 'assistant', 'content': 'assistant answer 1'},
+    {'role': 'user', 'content': 'user question 2'},
+    {'role': 'assistant', 'content': 'assistant answer 2'},
+    ...
+  ],
+  "model": "",              //  model name
+  "frequency_penalty": "",  // optional frequency_penalty
+  "presence_penalty": ""    // optional presence_penalty
+  "temperature": ""         // optional temperature
+  "top_p": ""               // optional top_p  
+  "llm_session_id": "",     // optional, llm_session_id
+}
+```
+
 This is a promise that will call back a **readableStream** object. You can get the conversation information through **readableStream.on('data')**, which will return an object:
 
 ```
   {
-    code: 200,  // code
-    message: "hello", //  message
-    total_payment: {  //  total_payment , If code is 200 it will return
-      amount: 10, //  total_payment amount
-      denom: 'unes' //  denom
-    }
+    code: 200,          //  code
+    message: "hello",   //  message
+    total_payment: {    //  total_payment , If code is 200 it will return
+      amount: 10,       //  total_payment amount
+      denom: 'unes'     //  denom
+    },
+    llm_session_id: ""  //  llm_session_id
   }
 ```
 
@@ -184,7 +208,8 @@ ChatUtils.requestChat({
   ],
   "model": "",  //  model name
   // you can add other hyperparameter,like:
-  "frequency_penalty": 0.5,
+  "frequency_penalty": 0.5, // optional frequency_penalty
+  "llm_session_id": "", // optional, llm_session_id
 })
   .then(readableStream => {
     readableStream.on("data",(data) => {
