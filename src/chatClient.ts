@@ -179,7 +179,7 @@ class ChatClient {
 
   getSignaturePayment() {
     if (this.signaturePayment[this.totalSignedPayment]) {
-      return this.signaturePayment[this.totalSignedPayment]
+      return ''
     }
     const signaturePayment = EncryptUtils.signMessage(`${this.totalSignedPayment}${this.chainInfo.feeCurrencies[0].coinMinimalDenom}`, this.chatSeq, false);
     this.signaturePayment[this.totalSignedPayment] = signaturePayment
@@ -220,7 +220,6 @@ class ChatClient {
       }
       ws.addEventListener("open", () => {
         if (ws.readyState === 1) {
-          this.signaturePayment = {}
           let questionStr = JSON.stringify({
             stream: true,
             ...question,
@@ -315,36 +314,26 @@ class ChatClient {
             amount: this.totalSignedPayment,
             denom: this.chainInfo.feeCurrencies[0].coinMinimalDenom,
           };
-          if (signedMessage) {
+          readableStream.push({
+            code: 200,
+            message: messageJson?.content,
+            llm_session_id: messageJson?.session_id || '',
+            total_payment,
+          });
+          this.totalUsedPayment += this.tokenPrice;
+          if (new BigNumber(this.totalUsedPayment).isGreaterThan(this.lockAmount)) {
             readableStream.push({
-              code: 200,
-              message: messageJson?.content,
-              llm_session_id: messageJson?.session_id || '',
+              code: 205,
+              message: '{"code":1015,"msg":"balance insufficient"}',
+            });
+            ws.close()
+          } else if (signedMessage) {
+            const data = JSON.stringify({
+              chat_seq: this.chatSeq,
               total_payment,
+              signature_payment: signedMessage,
             });
-            this.totalUsedPayment += this.tokenPrice;
-            if (new BigNumber(this.totalUsedPayment).isGreaterThan(this.lockAmount)) {
-              readableStream.push({
-                code: 205,
-                message: '{"code":1015,"msg":"balance insufficient"}',
-              });
-              ws.close()
-            } else {
-              const data = JSON.stringify({
-                chat_seq: this.chatSeq,
-                total_payment,
-                signature_payment: signedMessage,
-              });
-              ws.send(data);
-            }
-          } else {
-            readableStream.push({
-              code: 201,
-              message:
-                "No signature found or the signature has expired, please sign again",
-            });
-            ws.close();
-            readableStream.push(null);
+            ws.send(data);
           }
         }
       };

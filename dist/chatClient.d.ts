@@ -51,8 +51,8 @@ declare class ChatClient {
     getChainParams(nesaClient: any): any;
     version(): string;
     checkChainInfo(): string | false;
-    getSignaturePayment(): any;
-    checkSinglePaymentAmount(): any;
+    getSignaturePayment(): string;
+    checkSinglePaymentAmount(): string;
     requestChatQueue(readableStream: any, question: questionTypes): void;
     requestCloseHeartbeat(): void;
     requestAgentInfo(result: any, readableStream: any): any;
