@@ -254,6 +254,7 @@ export class NesaClient {
     )
     this.signResult = signResult
     const hex = Buffer.from(Uint8Array.from(TxRaw.encode(this.signResult).finish())).toString('hex')
+    this.broadcastPromise = undefined
     this.broadcastRegisterSession()
     return {
       sessionId,

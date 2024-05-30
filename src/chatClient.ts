@@ -26,7 +26,7 @@ interface questionTypes {
   presence_penalty?: any
   temperature?: any
   top_p?: any
-  llm_session_id?: string;
+  session_id?: string;
 }
 
 class ChatClient {
@@ -220,21 +220,11 @@ class ChatClient {
       }
       ws.addEventListener("open", () => {
         if (ws.readyState === 1) {
-          let questionStr = JSON.stringify({
+          const questionStr = JSON.stringify({
             stream: true,
             ...question,
             model: question?.model?.toLowerCase()
           });
-          if (question.llm_session_id) {
-            const reformatQuestionStr = {
-              stream: true,
-              ...question,
-              model: question?.model?.toLowerCase(),
-              session_id: question.llm_session_id
-            }
-            delete reformatQuestionStr.llm_session_id
-            questionStr = JSON.stringify(reformatQuestionStr);
-          }
           if (question.messages && this.assistantRoleName) {
             question.messages = question.messages.map((item: any) => {
               if (item.role === 'assistant') {
@@ -317,7 +307,7 @@ class ChatClient {
           readableStream.push({
             code: 200,
             message: messageJson?.content,
-            llm_session_id: messageJson?.session_id || '',
+            session_id: messageJson?.session_id || '',
             total_payment,
           });
           this.totalUsedPayment += this.tokenPrice;

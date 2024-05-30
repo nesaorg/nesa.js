@@ -97,7 +97,7 @@ This interface is used for initiating a conversation, with the parameters:
   "presence_penalty": ""    // optional presence_penalty
   "temperature": ""         // optional temperature
   "top_p": ""               // optional top_p  
-  "llm_session_id": "",     // optional, llm_session_id
+  "session_id": "",         // optional, session_id
 }
 ```
 
@@ -111,7 +111,7 @@ This is a promise that will call back a **readableStream** object. You can get t
       amount: 10,       //  total_payment amount
       denom: 'unes'     //  denom
     },
-    llm_session_id: ""  //  llm_session_id
+    session_id: ""      //  session_id
   }
 ```
 
@@ -209,15 +209,15 @@ ChatUtils.requestChat({
   "model": "",  //  model name
   // you can add other hyperparameter,like:
   "frequency_penalty": 0.5, // optional frequency_penalty
-  "llm_session_id": "", // optional, llm_session_id
+  "session_id": "", // optional, session_id
 })
   .then(readableStream => {
     readableStream.on("data",(data) => {
         //  Processing transmission data
-        const {code, message, total_payment, llm_session_id} = data
+        const {code, message, total_payment, session_id} = data
         if (code === 200) {
           // Streaming data return for normal conversation
-          // llm_session_id will only be returned when the code is 200.
+          // session_id will only be returned when the code is 200.
           const nextChatResponse = message
           const totalPayment = total_payment
           ...

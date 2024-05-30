@@ -16,7 +16,7 @@ interface questionTypes {
     presence_penalty?: any;
     temperature?: any;
     top_p?: any;
-    llm_session_id?: string;
+    session_id?: string;
 }
 declare class ChatClient {
     modelName: string;
