@@ -38,6 +38,7 @@ declare class ChatClient {
     private lastUserMinimumLockPromise;
     private lastGetAgentInfoPromise;
     private lastInitOfflineSignerPromise;
+    private chatProgressReadable;
     private nesaClient;
     private offLinesigner;
     private signaturePayment;
@@ -57,6 +58,7 @@ declare class ChatClient {
     requestCloseHeartbeat(): void;
     requestAgentInfo(result: any, readableStream: any): any;
     checkSignBroadcastResult(readableStream?: any): Promise<unknown>;
+    requestChatStatus(): Promise<unknown>;
     requestSession(): Promise<unknown>;
     requestChat(question: questionTypes): Promise<unknown>;
 }

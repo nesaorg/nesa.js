@@ -31,20 +31,20 @@ const ChatUtils = new ChatClient({
 })
 ```
 
-### Get instructions about chat progress
+#### `requestChatStatus`: Get conversation progress status interface
 
-The SDK will return a total of 7 statuses, see the table below. The specific status will be returned through the interfaces **requestSession** and **requestChat**, the specific status is as follows:
+**requestChatStatus** is used to return the current conversation progress status, a total of 8 statuses will be returned.
 
-| Code | Message                                | Remark                                                                                                           | Api                |
-| ---- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------ |
-| -    | Connecting to Nesa chain               | Default step. The initialization SDK displays this state by default. The SDK will not output this step.(Default) | -                  |
-| 301  | Connected to Nesa chain                | Nesa chain is connected, and returns after the chain parameters are initialized. (After click 'start inference') | **requestSession** |
-| 302  | Choosing an inference validator        | Signature successful, Choosing an inference validator                                                            | **requestSession** |
-| 303  | Connecting to the validator            | Connecting to the validator                                                                                      | **requestSession** |
-| 304  | Waiting for query                      | Waiting for query                                                                                                | **requestSession** |
-| 305  | Conducting inference                   | Conducting inference (After click 'start query')                                                                 | **requestChat**    |
-| 306  | Receiving responses                    | Receiving responses                                                                                              | **requestChat**    |
-| 307  | Task completed, wait for another query | Task completed, wait for another query                                                                           | **requestChat**    |
+| Code | Message                                | Remark                                                                                                           |
+| ---- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| 300  | Connecting to Nesa chain               | After the SDK is initialized, it defaults to this state.                                                         |
+| 301  | Connected to Nesa chain                | Nesa chain is connected, and returns after the chain parameters are initialized. (After click 'start inference') |
+| 302  | Choosing an inference validator        | Signature successful, Choosing an inference validator                                                            |
+| 303  | Connecting to the validator            | Connecting to the validator                                                                                      |
+| 304  | Waiting for query                      | Waiting for query                                                                                                |
+| 305  | Conducting inference                   | Conducting inference (After click 'start query')                                                                 |
+| 306  | Receiving responses                    | Receiving responses                                                                                              |
+| 307  | Task completed, wait for another query | Task completed, wait for another query                                                                           |
 
 #### `requestSession`: First initiate a signature
 
@@ -62,10 +62,6 @@ Return Code and message
 | Code | Message                          | Remark                                                                           |
 | ---- | -------------------------------- | -------------------------------------------------------------------------------- |
 | 200  | TransactionHash                  | requestSession transaction Hash                                                  |
-| 301  | Connected to Nesa chain          | Nesa chain is connected, and returns after the chain parameters are initialized. |
-| 302  | Choosing an inference validator  | Signature successful, Choosing an inference validator                            |
-| 303  | Connecting to the validator      | Connecting to the validator                                                      |
-| 304  | Waiting for query                | Waiting for query                                                                |
 | 311  | LockAmount cannot be less than x | LockAmount check                                                                 |
 | 312  | Sign register session failed     | Sign register session failed message                                             |
 | 313  | Register session error           | Register session failed error                                                    |
@@ -78,6 +74,7 @@ Return Code and message
 #### `requestChat`: Start Conversation Interface
 
 This interface is used for initiating a conversation, with the parameters:
+
 ```
   {
   "messages": [
@@ -96,7 +93,7 @@ This interface is used for initiating a conversation, with the parameters:
   "frequency_penalty": "",  // optional frequency_penalty
   "presence_penalty": ""    // optional presence_penalty
   "temperature": ""         // optional temperature
-  "top_p": ""               // optional top_p  
+  "top_p": ""               // optional top_p
   "session_id": "",         // optional, session_id
 }
 ```
@@ -125,9 +122,6 @@ Return Code and message
 | 203  | Current chat contributions                       |                                        |
 | 204  | `websocket` connection error message             |                                        |
 | 205  | Business error information returned              |                                        |
-| 305  | Conducting inference                             | Conducting inference                   |
-| 306  | Receiving responses                              | Receiving responses                    |
-| 307  | Task completed, wait for another query           | Task completed, wait for another query |
 
 ### Please note:
 
@@ -169,13 +163,6 @@ ChatUtils.requestSession()
         }
         //  For detailed code and message, please refer to the above API
         //  200 : requestSession transaction Hash
-        //  201 : requestSession sessionId
-
-        //  301 : Connected to Nesa chain
-        //  302 : Choosing an inference validator
-        //  303 : Connecting to the validator
-        //  304 : Waiting for query
-
         //  311 : LockAmount cannot be less than x, LockAmount check
         //  312 : Sign register session failed
         //  313 : Register session error
@@ -233,8 +220,27 @@ ChatUtils.requestChat({
         //  203 : Current query contributions
         //  204 : Websocket connection abnormality error message
         //  205 : Websocket business error information returned
+    })
+    readableStream.on("end",() => {
+        // End of transmission
+    })
+  })
+  .catch(error => {
+    // Error handling
+  });
 
+// This interface is used to retrieve the status of the conversation progress.
+ChatUtils.requestChatStatus()
+  .then(readableStream => {
+    readableStream.on("data",(data) => {
         //  Processing transmission data
+        const {code, message} = data
+        //  code and message reference as follows
+        //  300 : Connecting to Nesa chain
+        //  301 : Connected to Nesa chain
+        //  302 : Choosing an inference validator
+        //  303 : Connecting to the validator
+        //  304 : Waiting for query
         //  305 : Conducting inference
         //  306 : Receiving responses
         //  307 : Task completed, wait for another query

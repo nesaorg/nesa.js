@@ -49,6 +49,7 @@ class ChatClient {
   private lastUserMinimumLockPromise: any
   private lastGetAgentInfoPromise: any
   private lastInitOfflineSignerPromise: any
+  private chatProgressReadable: any
   private nesaClient: any
   private offLinesigner: any
   private signaturePayment: any;
@@ -156,6 +157,10 @@ class ChatClient {
     this.lastUserMinimumLockPromise = new Promise((resolve) => {
       WalletOperation.requestParams(nesaClient)
         .then((params) => {
+          this.chatProgressReadable && this.chatProgressReadable.push({
+            code: 301,
+            message: "Connected to Nesa chain",
+          })
           resolve(params)
         })
         .catch((error) => {
@@ -265,7 +270,7 @@ class ChatClient {
         }
         if (messageTimes === 0) {
           if (messageJson === "ack") {
-            readableStream.push({
+            this.chatProgressReadable && this.chatProgressReadable.push({
               code: 305,
               message: "Conducting inference",
             })
@@ -285,15 +290,15 @@ class ChatClient {
             code: 203,
             message: messageJson?.content?.split("[DONE]")[1],
           });
-          readableStream.push({
+          this.chatProgressReadable && this.chatProgressReadable.push({
             code: 307,
             message: "Task completed, wait for another query"
-          });
+          })
           readableStream.push(null);
           this.isChatinging = false;
         } else {
           if (messageTimes === 1) {
-            readableStream.push({
+            this.chatProgressReadable && this.chatProgressReadable.push({
               code: 306,
               message: "Receiving responses",
             })
@@ -328,6 +333,10 @@ class ChatClient {
         }
       };
       ws.onclose = (error: any) => {
+        this.chatProgressReadable && this.chatProgressReadable.push({
+          code: 307,
+          message: "Task completed, wait for another query"
+        })
         if (error?.reason) {
           console.log('onclose: ', error?.reason)
           readableStream.push({
@@ -344,6 +353,10 @@ class ChatClient {
         }
       };
       ws.onerror = (error: any) => {
+        this.chatProgressReadable && this.chatProgressReadable.push({
+          code: 307,
+          message: "Task completed, wait for another query"
+        })
         readableStream.push({
           code: 204,
           message: error?.reason || "Error: Connection failed",
@@ -357,6 +370,10 @@ class ChatClient {
         }
       };
     } catch (error: any) {
+      this.chatProgressReadable && this.chatProgressReadable.push({
+        code: 307,
+        message: "Task completed, wait for another query"
+      })
       console.log('websocketCatchError: ', error)
       readableStream.push({
         code: 207,
@@ -396,7 +413,7 @@ class ChatClient {
               agentHeartbeatUrl = agentHeartbeatUrl + '/heartbeat';
             }
             let firstInitHeartbeat = true
-            readableStream && readableStream.push({
+            this.chatProgressReadable && this.chatProgressReadable.push({
               code: 303,
               message: "Connecting to the validator",
             })
@@ -406,7 +423,7 @@ class ChatClient {
                 if (firstInitHeartbeat) {
                   this.agentUrl = agentWsUrl;
                   this.isRegisterSessioning = false;
-                  readableStream.push({
+                  this.chatProgressReadable && this.chatProgressReadable.push({
                     code: 304,
                     message: "Waiting for query",
                   })
@@ -442,7 +459,7 @@ class ChatClient {
             resolve(this.requestAgentInfo(result, readableStream))
           })
           .catch((error: any) => {
-            console.log('error: ', error)
+            console.log('checkSignBroadcastResultError: ', error)
             readableStream && readableStream.push({
               code: 318,
               message: error?.message,
@@ -451,6 +468,19 @@ class ChatClient {
             reject(error)
           })
       }
+    })
+  }
+
+  requestChatStatus() {
+    return new Promise((resolve) => {
+      const readableStream = new Readable({ objectMode: true });
+      readableStream._read = () => { };
+      readableStream.push({
+        code: 300,
+        message: "Connecting to Nesa chain",
+      })
+      this.chatProgressReadable = readableStream
+      resolve(readableStream);
     })
   }
 
@@ -478,10 +508,6 @@ class ChatClient {
                   .then((params: any) => {
                     if (params && params?.params) {
                       this.tokenPrice = params?.params?.tokenPrice?.low
-                      readableStream.push({
-                        code: 301,
-                        message: "Connected to Nesa chain",
-                      })
                       if (new BigNumber(this.lockAmount).isLessThan(params?.params?.userMinimumLock?.amount)) {
                         // reject(new Error("LockAmount cannot be less than " + params?.params?.userMinimumLock?.amount))
                         readableStream.push({
@@ -493,7 +519,7 @@ class ChatClient {
                           .then((result: any) => {
                             console.log('registerSession-result: ', result)
                             if (result?.transactionHash) {
-                              readableStream.push({
+                              this.chatProgressReadable && this.chatProgressReadable.push({
                                 code: 302,
                                 message: "Choosing an inference validator",
                               })
