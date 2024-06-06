@@ -34,7 +34,7 @@ class WalletOperation {
             const lockBalance = { denom: denom, amount: lockAmount };
             encryptUtils_1.default.requestVrf(client, offlineSigner).then(async (res) => {
                 const fee = {
-                    amount: [{ denom: chainInfo.feeCurrencies[0].coinMinimalDenom, amount: "0" }],
+                    amount: [{ denom: chainInfo.feeCurrencies[0].coinMinimalDenom, amount: "6" }],
                     gas: "200000",
                 };
                 if (res?.vrf && res?.sessionId) {
