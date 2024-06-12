@@ -95,7 +95,7 @@ This interface is used for initiating a conversation, with the parameters:
   "temperature": ""         // Optional temperature
   "top_p": ""               // Optional top_p
   "session_id": "",         // Optional session_id
-  ...                       // Other parameters
+  ...                       // Other parameters, but you need to ensure that the LLM side can support the setting of this parameter
 }
 ```
 
