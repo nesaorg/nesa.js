@@ -89,12 +89,13 @@ This interface is used for initiating a conversation, with the parameters:
     {'role': 'assistant', 'content': 'assistant answer 2'},
     ...
   ],
-  "model": "",              //  model name
-  "frequency_penalty": "",  // optional frequency_penalty
-  "presence_penalty": ""    // optional presence_penalty
-  "temperature": ""         // optional temperature
-  "top_p": ""               // optional top_p
-  "session_id": "",         // optional, session_id
+  "model": "",              // Model name
+  "frequency_penalty": "",  // Optional frequency_penalty
+  "presence_penalty": ""    // Optional presence_penalty
+  "temperature": ""         // Optional temperature
+  "top_p": ""               // Optional top_p
+  "session_id": "",         // Optional session_id
+  ...                       // Other parameters
 }
 ```
 
