@@ -74,7 +74,6 @@ Return Code and message
 #### `requestChat`: Start Conversation Interface
 
 This interface is used for initiating a conversation, with the parameters:
-
 ```
   {
   "messages": [
@@ -90,12 +89,7 @@ This interface is used for initiating a conversation, with the parameters:
     ...
   ],
   "model": "",              // Model name
-  "frequency_penalty": "",  // Optional frequency_penalty
-  "presence_penalty": ""    // Optional presence_penalty
-  "temperature": ""         // Optional temperature
-  "top_p": ""               // Optional top_p
-  "session_id": "",         // Optional session_id
-  ...                       // Other parameters, but you need to ensure that the LLM side can support the setting of this parameter
+  ...                       // Other parameters, you need to ensure that these parameters are supported by the LLM Backend
 }
 ```
 
@@ -133,7 +127,40 @@ Path: Settings -> Advanced -> Modify connection point
 Choose: Nesa Testnet, set
 RPC: https://rpc.test.nesa.ai
 LCD: https://lcd.test.nesa.ai
+```
 
+2. Parameter settings when initiating a conversation
+
+    The SDK accepts any parameter values. Please pass parameters in key-value format when initiating a conversation using the "requestChat" method. There are no specific data type requirements for the values, and there is no limit to the number of parameters. However, please ensure that these parameters are supported by the LLM backend. You can refer to the following implementation for guidance.
+```
+import { ChatClient } from 'nesa-sdk';
+
+const ChatUtils = new ChatClient({
+    modelName: "",
+    chainInfo: ChainInfo // optional, The default chain config is src/default.config.ts,
+    lockAmount: lockAmount // optional, default is 1000
+  })
+ChatUtils.requestChat({
+  "messages": [
+    {'role': 'user', 'content': 'user question 1'},
+    {'role': 'assistant', 'content': 'assistant answer 1'},
+    ...
+  ],
+  "model": "",                //  model name
+  // you can add other parameter,like:
+  "frequency_penalty": "",    // Optional frequency_penalty
+  "presence_penalty": ""      // Optional presence_penalty
+  "session_id": "",           // optional, session_id
+})
+.then(readableStream => {
+    readableStream.on("data",(data) => {
+        //  Processing transmission data
+        const {code, message, total_payment, session_id} = data
+    })
+    readableStream.on("end",() => {
+        // End of transmission
+    })
+  })
 ```
 
 ### Example
@@ -144,7 +171,7 @@ import { ChatClient } from 'nesa-sdk';
 const ChatUtils = new ChatClient({
     modelName: "",
     chainInfo: ChainInfo // optional, The default chain config is src/default.config.ts,
-    lockAmount: lockAmount // optional, default is 1000
+    lockAmount: lockAmount // optional, default is 1000000
   })
 
 // This method can be called once
@@ -194,10 +221,10 @@ ChatUtils.requestChat({
     {'role': 'assistant', 'content': 'assistant answer 2'},
     ...
   ],
-  "model": "",  //  model name
-  // you can add other hyperparameter,like:
-  "frequency_penalty": 0.5, // optional frequency_penalty
-  "session_id": "", // optional, session_id
+  "model": "",                //  model name
+  // you can add other parameter,like:
+  "frequency_penalty": 0.5,   // optional frequency_penalty
+  "session_id": "",           // optional, session_id
 })
   .then(readableStream => {
     readableStream.on("data",(data) => {
