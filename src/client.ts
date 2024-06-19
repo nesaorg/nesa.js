@@ -35,6 +35,7 @@ import {
   QueryVRFSeedResponse,
   QuerySessionByAgentResponse
 } from "./codec/agent/v1/query";
+import { MsgRegisterModel, MsgRegisterNode } from "./codec/dht/v1/tx";
 import { StdFee } from "@cosmjs/amino";
 import { TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import { sha256 } from '@cosmjs/crypto'
@@ -56,6 +57,8 @@ function nesaRegistry(): Registry {
     ['/agent.v1.MsgRegisterSession', MsgRegisterSession],
     ['/agent.v1.MsgSubmitPayment', MsgSubmitPayment],
     ['/agent.v1.VRF', VRF],
+    ['/dht.v1.MsgRegisterModel', MsgRegisterModel],
+    ['/dht.v1.MsgRegisterNode', MsgRegisterNode],
   ])
 }
 
@@ -320,6 +323,84 @@ export class NesaClient {
     const result = await this.sign.signAndBroadcast(
       senderAddress,
       [submitPaymentMsg],
+      "auto"
+    );
+    if (isDeliverTxFailure(result)) {
+      throw new Error(createDeliverTxFailureMessage(result));
+    }
+
+    return {
+      events: result.events,
+      transactionHash: result.transactionHash,
+      height: result.height,
+    };
+  }
+
+  public async registerModel(
+    creator: string,
+    modelId: string,
+    blockCids: string[]
+  ): Promise<MsgResult> {
+    this.logger.verbose(`Register Model`);
+    const senderAddress = this.senderAddress;
+    const registerModelMsg = {
+      typeUrl: '/dht.v1.MsgRegisterModel',
+      value: MsgRegisterModel.fromPartial({
+        creator,
+        modelId,
+        blockCids
+      }),
+    };
+    this.logger.debug('Register Model Message: ', registerModelMsg);
+    const result = await this.sign.signAndBroadcast(
+      senderAddress,
+      [registerModelMsg],
+      "auto"
+    );
+    if (isDeliverTxFailure(result)) {
+      throw new Error(createDeliverTxFailureMessage(result));
+    }
+
+    return {
+      events: result.events,
+      transactionHash: result.transactionHash,
+      height: result.height,
+    };
+  }
+
+  public async registerNode(
+    creator: string,
+    nodeId: string,
+    publicName: string,
+    version: string,
+    networkAddress: string,
+    walletAddress: string,
+    vram: Long,
+    networkRps: number,
+    usingRelay: boolean,
+    nextPings: Uint8Array[]
+  ): Promise<MsgResult> {
+    this.logger.verbose(`Register Node`);
+    const senderAddress = this.senderAddress;
+    const registerNodeMsg = {
+      typeUrl: '/dht.v1.MsgRegisterNode',
+      value: MsgRegisterNode.fromPartial({
+        creator,
+        nodeId,
+        publicName,
+        version,
+        networkAddress,
+        walletAddress,
+        vram,
+        networkRps,
+        usingRelay,
+        nextPings
+      }),
+    };
+    this.logger.debug('Register Node Message: ', registerNodeMsg);
+    const result = await this.sign.signAndBroadcast(
+      senderAddress,
+      [registerNodeMsg],
       "auto"
     );
     if (isDeliverTxFailure(result)) {
