@@ -163,6 +163,12 @@ ChatUtils.requestChat({
   })
 ```
 
+3. Test Cases
+```
+  // nodejs version >= v19.0.0
+  node test/test.js
+```
+
 ### Example
 
 ```
