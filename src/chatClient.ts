@@ -433,17 +433,32 @@ class ChatClient {
                 }
               },
               onerror: () => {
+                readableStream && readableStream.push({
+                  code: 319,
+                  message: 'Agent connection error: ' + selectAgent.url,
+                })
+                readableStream && readableStream.push(null)
                 reject(new Error("Agent heartbeat packet connection failed"));
               }
             });
           } else {
             this.isRegisterSessioning = false;
+            readableStream && readableStream.push({
+              code: 319,
+              message: 'Agent not found',
+            })
+            readableStream && readableStream.push(null)
             reject(new Error("No agent found"))
           }
         })
         .catch((error) => {
           console.log("requestAgentInfoError: ", error);
           this.lastGetAgentInfoPromise = undefined
+          readableStream && readableStream.push({
+            code: 319,
+            message: 'Agent connection error: ' + error?.message || error.toString()
+          })
+          readableStream && readableStream.push(null)
           reject(error);
         })
     });

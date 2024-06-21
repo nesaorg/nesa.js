@@ -70,6 +70,7 @@ Return Code and message
 | 316  | SDK client init error            | SDK client init error                                                            |
 | 317  | Wallet connect error             | Wallet connect error message                                                     |
 | 318  | Broadcast tx error               | Broadcast tx error message                                                       |
+| 319  | Agent connection error           | Agent connection error message                                                   |
 
 #### `requestChat`: Start Conversation Interface
 
