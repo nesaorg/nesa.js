@@ -17,7 +17,7 @@ npm link
 npm link nesa-sdk
 ```
 
-### Init SDK
+#### Init SDK
 
 ```
 import { ChatClient } from 'nesa-sdk';
@@ -29,6 +29,91 @@ const ChatUtils = new ChatClient({
   singleLockUpAmount: ""  //  optional. Number of single signed payment , default 100 * tokenPrice
   lowBalance: ""  //  optional. The remaining unused amount of payment. If unused payment is lower than this value, payment will be regenerated., default 10 * tokenPrice
 })
+
+// chainInfo parameter description:
+const chainInfo = {
+    chainId: 'nesa-testnet-3',
+    chainName: 'Nesa Testnet',
+    rest: 'https://lcd.test.nesa.ai',
+    rpc: 'https://rpc.test.nesa.ai',
+    feeCurrencies: [
+        {
+            coinDenom: "NES",
+            coinMinimalDenom: "unes",
+            coinDecimals: 6,
+            coinGeckoId: "nesa",
+            coinImageUrl:
+                "https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/nesa/nes.png",
+            gasPriceStep: {
+                low: 0.01,
+                average: 0.02,
+                high: 0.1,
+            },
+        },
+    ],
+    chainSymbolImageUrl:
+        "https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/nesa/chain.png",
+    nodeProvider: {
+        name: "Nesa",
+        email: "dev@nesa.ai",
+        website: "https://nesa.ai/",
+    },
+    bip44: {
+        coinType: 118,
+    },
+    bech32Config: {
+        bech32PrefixAccAddr: "nesa",
+        bech32PrefixAccPub: "nesa" + "pub",
+        bech32PrefixValAddr: "nesa" + "valoper",
+        bech32PrefixValPub: "nesa" + "valoperpub",
+        bech32PrefixConsAddr: "nesa" + "valcons",
+        bech32PrefixConsPub: "nesa" + "valconspub",
+    },
+    currencies: [
+        {
+            coinDenom: "NES",
+            coinMinimalDenom: "unes",
+            coinDecimals: 6,
+            coinGeckoId: "nesa",
+            coinImageUrl:
+                "https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/nesa/nes.png",
+        },
+    ],
+    stakeCurrency: {
+        coinDenom: "NES",
+        coinMinimalDenom: "unes",
+        coinDecimals: 6,
+        coinGeckoId: "nesa",
+        coinImageUrl:
+            "https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/nesa/nes.png",
+        gasPriceStep: {},
+        features: ["cosmwasm"],
+    },
+};
+
+// If you need to set up a custom access point, you need to refer to the above format and modify the corresponding configuration based on the custom access point. (In particular, please pay attention to the first 5 items of the configuration)
+{
+    chainId: 'nesa-testnet-3',        //  ChainId for custom access point
+    chainName: 'Nesa Testnet',        //  ChainName of custom access point
+    rest: 'https://lcd.test.nesa.ai', //  Rest address of custom access point
+    rpc: 'https://rpc.test.nesa.ai',  //  Rpc address of custom access point
+    feeCurrencies: [                  //  Please configure the feeCurrencies for custom access points to set up transaction fees based on the actual token information of the custom access point.
+        {
+            coinDenom: "NES",         //  Coin Name
+            coinMinimalDenom: "unes", //  Minimum unit of coin
+            coinDecimals: 6,          //  Coin precision
+            coinGeckoId: "nesa",      //  Coin Name
+            coinImageUrl:
+                "https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/nesa/nes.png", //    Coin icon
+            gasPriceStep: {           //  Gas price configuration
+                low: 0.01,            //  Lowest gas price
+                average: 0.02,        //  Average gas price
+                high: 0.1,            //  Highest gas price
+            },
+        },
+    ],
+    ...                                // Other chain parameters, can be directly used as reference examples without any special modifications.
+}
 ```
 
 #### `requestChatStatus`: Get conversation progress status interface
@@ -59,22 +144,23 @@ This is a promise that will call back a **readableStream** object. You can get t
 
 Return Code and message
 
-| Code | Message                          | Remark                                                                           |
-| ---- | -------------------------------- | -------------------------------------------------------------------------------- |
-| 200  | TransactionHash                  | requestSession transaction Hash                                                  |
-| 311  | LockAmount cannot be less than x | LockAmount check                                                                 |
-| 312  | Sign register session failed     | Sign register session failed message                                             |
-| 313  | Register session error           | Register session failed error                                                    |
-| 314  | Chain params format error        | Chain params format error                                                        |
-| 315  | Chain params error               | Chain params error message                                                       |
-| 316  | SDK client init error            | SDK client init error                                                            |
-| 317  | Wallet connect error             | Wallet connect error message                                                     |
-| 318  | Broadcast tx error               | Broadcast tx error message                                                       |
-| 319  | Agent connection error           | Agent connection error message                                                   |
+| Code | Message                          | Remark                               |
+| ---- | -------------------------------- | ------------------------------------ |
+| 200  | TransactionHash                  | requestSession transaction Hash      |
+| 311  | LockAmount cannot be less than x | LockAmount check                     |
+| 312  | Sign register session failed     | Sign register session failed message |
+| 313  | Register session error           | Register session failed error        |
+| 314  | Chain params format error        | Chain params format error            |
+| 315  | Chain params error               | Chain params error message           |
+| 316  | SDK client init error            | SDK client init error                |
+| 317  | Wallet connect error             | Wallet connect error message         |
+| 318  | Broadcast tx error               | Broadcast tx error message           |
+| 319  | Agent connection error           | Agent connection error message       |
 
 #### `requestChat`: Start Conversation Interface
 
 This interface is used for initiating a conversation, with the parameters:
+
 ```
   {
   "messages": [
@@ -110,14 +196,14 @@ This is a promise that will call back a **readableStream** object. You can get t
 
 Return Code and message
 
-| Code | Message                                          | Remark                                 |
-| ---- | ------------------------------------------------ | -------------------------------------- |
-| 200  | Normal response                                  |                                        |
-| 201  | No signature found or the signature has expired. |                                        |
-| 202  | Illegal link                                     |                                        |
-| 203  | Current chat contributions                       |                                        |
-| 204  | `websocket` connection error message             |                                        |
-| 205  | Business error information returned              |                                        |
+| Code | Message                                          | Remark |
+| ---- | ------------------------------------------------ | ------ |
+| 200  | Normal response                                  |        |
+| 201  | No signature found or the signature has expired. |        |
+| 202  | Illegal link                                     |        |
+| 203  | Current chat contributions                       |        |
+| 204  | `websocket` connection error message             |        |
+| 205  | Business error information returned              |        |
 
 ### Please note:
 
@@ -132,7 +218,8 @@ LCD: https://lcd.test.nesa.ai
 
 2. Parameter settings when initiating a conversation
 
-    The SDK accepts any parameter values. Please pass parameters in key-value format when initiating a conversation using the "requestChat" method. There are no specific data type requirements for the values, and there is no limit to the number of parameters. However, please ensure that these parameters are supported by the LLM backend. You can refer to the following implementation for guidance.
+   The SDK accepts any parameter values. Please pass parameters in key-value format when initiating a conversation using the "requestChat" method. There are no specific data type requirements for the values, and there is no limit to the number of parameters. However, please ensure that these parameters are supported by the LLM backend. You can refer to the following implementation for guidance.
+
 ```
 import { ChatClient } from 'nesa-sdk';
 
@@ -165,6 +252,7 @@ ChatUtils.requestChat({
 ```
 
 3. Test Cases
+
 ```
   // nodejs version >= v19.0.0
   node test/test.js
