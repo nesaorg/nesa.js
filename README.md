@@ -209,6 +209,7 @@ Return Code and message
 This method is used to close the heartbeat connection with the agent, thereby disconnecting the conversation and allowing the agent to submit payment.
 
 Regarding the explanation of the timing for disconnecting the conversation between the SDK and the agent to submit payment:
+
 After the SDK is initialized normally, it will actively maintain a heartbeat connection with the agent. The agent will continue to provide normal conversation functionality as long as the heartbeat connection is normal (of course, the token consumption for the conversation cannot exceed the locked amount). If you need to disconnect the connection and terminate the conversation, please call the requestCloseHeartbeat method, and the SDK will disconnect the heartbeat connection with the agent. Once the heartbeat connection times out after 20 seconds, the agent service will disconnect the conversation and submit the payment to complete this round of conversation functionality.
 
 
