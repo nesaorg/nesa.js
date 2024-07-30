@@ -1,4 +1,7 @@
 import { ChainInfo } from "@keplr-wallet/types";
+type ReadableStreamWithState = any & {
+    isClosed?: boolean;
+};
 interface ConfigOptions {
     modelName: string;
     lockAmount?: string;
@@ -8,7 +11,7 @@ interface ConfigOptions {
     lowBalance?: string;
     privateKey?: string;
 }
-interface questionTypes {
+interface QuestionTypes {
     messages: any;
     model: string;
     stream?: boolean;
@@ -47,19 +50,29 @@ declare class ChatClient {
     private isEverRequestSession;
     private tokenPrice;
     constructor(options: ConfigOptions);
-    initWallet(): any;
-    getNesaClient(): any;
-    getChainParams(nesaClient: any): any;
-    version(): string;
-    checkChainInfo(): string | false;
-    getSignaturePayment(): string;
-    checkSinglePaymentAmount(): string;
-    requestChatQueue(readableStream: any, question: questionTypes): void;
+    private initWallet;
+    private initBrowserWallet;
+    private initNodeWallet;
+    private getNesaClient;
+    private getChainParams;
+    private checkChainInfo;
+    private getSignaturePayment;
+    private checkSinglePaymentAmount;
+    private handleWsClose;
+    private handleWsError;
+    private closeStream;
+    requestChatQueue(readableStream: ReadableStreamWithState & {
+        isClosed?: boolean;
+    }, question: QuestionTypes): void;
     requestCloseHeartbeat(): void;
-    requestAgentInfo(result: any, readableStream: any): any;
-    checkSignBroadcastResult(readableStream?: any): Promise<unknown>;
+    requestAgentInfo(result: any, readableStream: ReadableStreamWithState & {
+        isClosed?: boolean;
+    }): Promise<any>;
+    checkSignBroadcastResult(readableStream?: ReadableStreamWithState & {
+        isClosed?: boolean;
+    }): Promise<unknown>;
     requestChatStatus(): Promise<unknown>;
     requestSession(): Promise<unknown>;
-    requestChat(question: questionTypes): Promise<unknown>;
+    requestChat(question: QuestionTypes): Promise<unknown>;
 }
 export default ChatClient;
