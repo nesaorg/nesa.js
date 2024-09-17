@@ -2,16 +2,25 @@ import EncryptUtils from "./encryptUtils";
 import WalletOperation from "./walletOperation";
 import { Readable } from "stream-browserify";
 import { ChainInfo } from "@keplr-wallet/types";
-import { defaultChainInfo, defaultLockAmount, defaultSinglePaymentAmount, defaultLowBalance, sdkVersion } from "./default.config";
+import {
+  defaultChainInfo,
+  defaultLockAmount,
+  defaultSinglePaymentAmount,
+  defaultLowBalance,
+  sdkVersion,
+} from "./default.config";
 import { socket } from "./socket";
-import { BigNumber } from 'bignumber.js';
-import { CosmjsOfflineSigner, suggestChain } from '@leapwallet/cosmos-snap-provider';
+import { BigNumber } from "bignumber.js";
+import {
+  CosmjsOfflineSigner,
+  suggestChain,
+} from "@leapwallet/cosmos-snap-provider";
 import { DirectSecp256k1Wallet } from "@cosmjs/proto-signing";
 
 // this is ennoying, but stream-browserify doesn't have a type definition
 // node's stream package has a type definition, but it wasn't playing nicely, so not sure if it is compatible
 type ReadableStreamWithState = any & { isClosed?: boolean };
- 
+
 interface ConfigOptions {
   modelName: string;
   lockAmount?: string;
@@ -53,7 +62,9 @@ class ChatClient {
   private lastUserMinimumLockPromise: Promise<any> | undefined;
   private lastGetAgentInfoPromise: Promise<any> | undefined;
   private lastInitOfflineSignerPromise: Promise<any> | undefined;
-  private chatProgressReadable: ReadableStreamWithState & { isClosed?: boolean } | undefined;
+  private chatProgressReadable:
+    | (ReadableStreamWithState & { isClosed?: boolean })
+    | undefined;
   private nesaClient: any;
   private offLinesigner: any;
   private signaturePayment: { [key: number]: string } = {};
@@ -63,23 +74,25 @@ class ChatClient {
   private tokenPrice: number;
 
   constructor(options: ConfigOptions) {
-    this.modelName = options?.modelName?.toLowerCase() || '';
+    this.modelName = options?.modelName?.toLowerCase() || "";
     this.chainInfo = options.chainInfo || defaultChainInfo;
     this.lockAmount = options.lockAmount || defaultLockAmount;
-    this.singlePaymentAmount = options.singlePaymentAmount || defaultSinglePaymentAmount;
+    this.singlePaymentAmount =
+      options.singlePaymentAmount || defaultSinglePaymentAmount;
     this.lowBalance = options.lowBalance || defaultLowBalance;
-    this.lockAmountDenom = '';
-    this.walletName = options.walletName || '';
-    this.privateKey = options.privateKey || '';
+    this.lockAmountDenom = "";
+    this.walletName = options.walletName || "";
+    this.privateKey = options.privateKey || "";
     this.isEverRequestSession = false;
-    this.isBrowser = typeof window !== 'undefined';
+    this.isBrowser = typeof window !== "undefined";
     this.isBrowser && (window.nesaSdkVersion = sdkVersion);
     this.tokenPrice = 0;
     this.initWallet();
   }
 
   private async initWallet(): Promise<void> {
-    if (this.lastInitOfflineSignerPromise) return this.lastInitOfflineSignerPromise;
+    if (this.lastInitOfflineSignerPromise)
+      return this.lastInitOfflineSignerPromise;
     this.lastInitOfflineSignerPromise = (async () => {
       try {
         if (this.isBrowser) {
@@ -89,7 +102,7 @@ class ChatClient {
         }
         this.getNesaClient();
       } catch (error) {
-        console.error('initOfflineSigner-error: ', error);
+        console.error("initOfflineSigner-error: ", error);
         throw error;
       }
     })();
@@ -97,7 +110,7 @@ class ChatClient {
   }
 
   private async initBrowserWallet(): Promise<void> {
-    if (this.walletName === 'npm:@leapwallet/metamask-cosmos-snap') {
+    if (this.walletName === "npm:@leapwallet/metamask-cosmos-snap") {
       await suggestChain(this.chainInfo, { force: false });
       this.offLinesigner = new CosmjsOfflineSigner(this.chainInfo.chainId);
     } else if (window?.keplr) {
@@ -105,15 +118,20 @@ class ChatClient {
       await window.keplr.enable(this.chainInfo.chainId);
       this.offLinesigner = window.getOfflineSigner!(this.chainInfo.chainId);
     } else {
-      throw new Error('No wallet installed, please install keplr or metamask wallet first');
+      throw new Error(
+        "No wallet installed, please install keplr or metamask wallet first"
+      );
     }
   }
 
   private async initNodeWallet(): Promise<void> {
     if (!this.privateKey) {
-      throw new Error('In the node environment, please provide the privateKey');
+      throw new Error("In the node environment, please provide the privateKey");
     }
-    const wallet = await DirectSecp256k1Wallet.fromKey(Buffer.from(this.privateKey, 'hex'), 'nesa');
+    const wallet = await DirectSecp256k1Wallet.fromKey(
+      Buffer.from(this.privateKey, "hex"),
+      "nesa"
+    );
     this.offLinesigner = wallet;
   }
 
@@ -127,7 +145,7 @@ class ChatClient {
           resolve(client);
         })
         .catch((error) => {
-          console.error('initNesaClientError: ', error);
+          console.error("initNesaClientError: ", error);
           this.lastNesaClientPromise = undefined;
           reject(error);
         });
@@ -140,14 +158,16 @@ class ChatClient {
     this.lastUserMinimumLockPromise = new Promise((resolve, reject) => {
       WalletOperation.requestParams(nesaClient)
         .then((params) => {
-          this.chatProgressReadable?.push({
-            code: 301,
-            message: "Connected to Nesa chain",
-          });
+          if (!this.chatProgressReadable?.isClosed) {
+            this.chatProgressReadable?.push({
+              code: 301,
+              message: "Connected to Nesa chain",
+            });
+          }
           resolve(params);
         })
         .catch((error) => {
-          console.error('getChainParamsError: ', error);
+          console.error("getChainParamsError: ", error);
           this.lastUserMinimumLockPromise = undefined;
           reject(error);
         });
@@ -156,32 +176,60 @@ class ChatClient {
   }
 
   private checkChainInfo() {
-    return this.chainInfo?.rpc
-      && this.chainInfo?.rest
-      && this.chainInfo?.feeCurrencies
-      && this.chainInfo?.feeCurrencies.length > 0
-      && this.chainInfo?.feeCurrencies[0]?.coinMinimalDenom;
+    return (
+      this.chainInfo?.rpc &&
+      this.chainInfo?.rest &&
+      this.chainInfo?.feeCurrencies &&
+      this.chainInfo?.feeCurrencies.length > 0 &&
+      this.chainInfo?.feeCurrencies[0]?.coinMinimalDenom
+    );
   }
 
   private getSignaturePayment() {
-    if (this.signaturePayment[this.totalSignedPayment]) return '';
-    const signaturePayment = EncryptUtils.signMessage(`${this.totalSignedPayment}${this.chainInfo.feeCurrencies[0].coinMinimalDenom}`, this.chatSeq, false);
+    if (this.signaturePayment[this.totalSignedPayment]) return "";
+    const signaturePayment = EncryptUtils.signMessage(
+      `${this.totalSignedPayment}${this.chainInfo.feeCurrencies[0].coinMinimalDenom}`,
+      this.chatSeq,
+      false
+    );
     this.signaturePayment[this.totalSignedPayment] = signaturePayment;
     return signaturePayment;
   }
 
   private checkSinglePaymentAmount() {
-    if (new BigNumber(this.totalSignedPayment).isLessThanOrEqualTo(this.lowBalance)) {
-      this.totalSignedPayment = Number(new BigNumber(this.totalSignedPayment).plus(this.singlePaymentAmount).toFixed(0, 1));
+    if (
+      new BigNumber(this.totalSignedPayment).isLessThanOrEqualTo(
+        this.lowBalance
+      )
+    ) {
+      this.totalSignedPayment = Number(
+        new BigNumber(this.totalSignedPayment)
+          .plus(this.singlePaymentAmount)
+          .toFixed(0, 1)
+      );
       return this.getSignaturePayment();
     }
-    if (new BigNumber(this.totalSignedPayment).minus(this.totalUsedPayment).isLessThanOrEqualTo(this.lowBalance)) {
-      if (new BigNumber(this.totalSignedPayment).isLessThan(this.totalUsedPayment)) {
+    if (
+      new BigNumber(this.totalSignedPayment)
+        .minus(this.totalUsedPayment)
+        .isLessThanOrEqualTo(this.lowBalance)
+    ) {
+      if (
+        new BigNumber(this.totalSignedPayment).isLessThan(this.totalUsedPayment)
+      ) {
         this.totalSignedPayment = Number(this.totalUsedPayment);
         return this.getSignaturePayment();
       }
-      if (new BigNumber(this.totalSignedPayment).plus(this.singlePaymentAmount).isLessThanOrEqualTo(this.lockAmount)) {
-        this.totalSignedPayment = Number(new BigNumber(this.totalSignedPayment).plus(this.singlePaymentAmount).toFixed(0, 1));
+      if (
+        new BigNumber(this.totalSignedPayment)
+          .plus(this.singlePaymentAmount)
+          .isLessThanOrEqualTo(this.lockAmount)
+      ) {
+        this.totalSignedPayment = Number(
+          new BigNumber(this.totalSignedPayment)
+            .plus(this.singlePaymentAmount)
+            .toFixed(0, 1)
+        );
       } else {
         this.totalSignedPayment = Number(this.lockAmount);
       }
@@ -190,7 +238,10 @@ class ChatClient {
     return this.getSignaturePayment();
   }
 
-  private handleWsClose(event: CloseEvent, readableStream: ReadableStreamWithState & { isClosed?: boolean }) {
+  private handleWsClose(
+    event: CloseEvent,
+    readableStream: ReadableStreamWithState & { isClosed?: boolean }
+  ) {
     const { reason, wasClean } = event;
 
     if (this.chatProgressReadable && !this.chatProgressReadable.isClosed) {
@@ -201,7 +252,7 @@ class ChatClient {
     }
 
     if (!wasClean && reason) {
-      console.log('WebSocket closed unexpectedly: ', reason);
+      console.log("WebSocket closed unexpectedly: ", reason);
       if (!readableStream.isClosed) {
         readableStream.push({
           code: 205,
@@ -215,12 +266,16 @@ class ChatClient {
     this.isChatinging = false;
 
     if (this.chatQueue.length > 0) {
-      const { readableStream: nextReadableStream, question: nextQuestion } = this.chatQueue.shift();
+      const { readableStream: nextReadableStream, question: nextQuestion } =
+        this.chatQueue.shift();
       this.requestChatQueue(nextReadableStream, nextQuestion);
     }
   }
 
-  private handleWsError(error: any, readableStream: ReadableStreamWithState & { isClosed?: boolean }) {
+  private handleWsError(
+    error: any,
+    readableStream: ReadableStreamWithState & { isClosed?: boolean }
+  ) {
     if (this.chatProgressReadable && !this.chatProgressReadable.isClosed) {
       this.chatProgressReadable.push({
         code: 307,
@@ -240,19 +295,25 @@ class ChatClient {
     this.isChatinging = false;
 
     if (this.chatQueue.length > 0) {
-      const { readableStream: nextReadableStream, question: nextQuestion } = this.chatQueue.shift();
+      const { readableStream: nextReadableStream, question: nextQuestion } =
+        this.chatQueue.shift();
       this.requestChatQueue(nextReadableStream, nextQuestion);
     }
   }
 
-  private closeStream(readableStream: ReadableStreamWithState & { isClosed?: boolean }) {
+  private closeStream(
+    readableStream: ReadableStreamWithState & { isClosed?: boolean }
+  ) {
     if (!readableStream.isClosed) {
       readableStream.push(null); // Signal the end of the stream
       readableStream.isClosed = true; // Mark the stream as closed
     }
   }
 
-  requestChatQueue(readableStream: ReadableStreamWithState & { isClosed?: boolean }, question: QuestionTypes) {
+  requestChatQueue(
+    readableStream: ReadableStreamWithState & { isClosed?: boolean },
+    question: QuestionTypes
+  ) {
     this.isChatinging = true;
     this.chatSeq += 1;
     let messageTimes = 0;
@@ -262,7 +323,7 @@ class ChatClient {
       if (this.isBrowser) {
         ws = new WebSocket(this.agentUrl);
       } else {
-        const WebSocket = require('ws');
+        const WebSocket = require("ws");
         ws = new WebSocket(this.agentUrl);
       }
 
@@ -271,19 +332,23 @@ class ChatClient {
           const questionStr = JSON.stringify({
             stream: true,
             ...question,
-            model: question?.model?.toLowerCase()
+            model: question?.model?.toLowerCase(),
           });
 
           if (question.messages && this.assistantRoleName) {
             question.messages = question.messages.map((item: any) => {
-              if (item.role === 'assistant') {
+              if (item.role === "assistant") {
                 item.role = this.assistantRoleName;
               }
               return item;
             });
           }
 
-          const signedMessage = EncryptUtils.signMessage(questionStr, this.chatSeq, true);
+          const signedMessage = EncryptUtils.signMessage(
+            questionStr,
+            this.chatSeq,
+            true
+          );
           if (signedMessage) {
             ws.send(
               JSON.stringify({
@@ -296,7 +361,8 @@ class ChatClient {
             if (!readableStream.isClosed) {
               readableStream.push({
                 code: 201,
-                message: "No signature found or the signature has expired, please sign again",
+                message:
+                  "No signature found or the signature has expired, please sign again",
               });
               this.closeStream(readableStream);
             }
@@ -343,17 +409,19 @@ class ChatClient {
             });
             this.chatProgressReadable?.push({
               code: 307,
-              message: "Task completed, wait for another query"
+              message: "Task completed, wait for another query",
             });
             this.closeStream(readableStream);
           }
           this.isChatinging = false;
         } else {
           if (messageTimes === 1) {
-            this.chatProgressReadable?.push({
-              code: 306,
-              message: "Receiving responses",
-            });
+            if (!this.chatProgressReadable?.isClosed) {
+              this.chatProgressReadable?.push({
+                code: 306,
+                message: "Receiving responses",
+              });
+            }
             messageTimes += 1;
           }
           const signedMessage = this.checkSinglePaymentAmount();
@@ -365,12 +433,14 @@ class ChatClient {
             readableStream.push({
               code: 200,
               message: messageJson?.content,
-              session_id: messageJson?.session_id || '',
+              session_id: messageJson?.session_id || "",
               total_payment,
             });
           }
           this.totalUsedPayment += this.tokenPrice;
-          if (new BigNumber(this.totalUsedPayment).isGreaterThan(this.lockAmount)) {
+          if (
+            new BigNumber(this.totalUsedPayment).isGreaterThan(this.lockAmount)
+          ) {
             if (!readableStream.isClosed) {
               readableStream.push({
                 code: 205,
@@ -390,14 +460,16 @@ class ChatClient {
         }
       };
 
-      ws.onclose = (event: CloseEvent) => this.handleWsClose(event, readableStream);
+      ws.onclose = (event: CloseEvent) =>
+        this.handleWsClose(event, readableStream);
       ws.onerror = (error: any) => this.handleWsError(error, readableStream);
-
     } catch (error: any) {
-      this.chatProgressReadable?.push({
-        code: 307,
-        message: "Task completed, wait for another query"
-      });
+      if (!this.chatProgressReadable?.isClosed) {
+        this.chatProgressReadable?.push({
+          code: 307,
+          message: "Task completed, wait for another query",
+        });
+      }
       if (!readableStream.isClosed) {
         readableStream.push({
           code: 207,
@@ -407,7 +479,8 @@ class ChatClient {
       }
       this.isChatinging = false;
       if (this.chatQueue.length > 0) {
-        const { readableStream: nextReadableStream, question: nextQuestion } = this.chatQueue.shift();
+        const { readableStream: nextReadableStream, question: nextQuestion } =
+          this.chatQueue.shift();
         this.requestChatQueue(nextReadableStream, nextQuestion);
       }
     }
@@ -418,39 +491,52 @@ class ChatClient {
     socket.close();
   }
 
-  requestAgentInfo(result: any, readableStream: ReadableStreamWithState & { isClosed?: boolean }) {
+  requestAgentInfo(
+    result: any,
+    readableStream: ReadableStreamWithState & { isClosed?: boolean }
+  ) {
     if (this.lastGetAgentInfoPromise) {
       return this.lastGetAgentInfoPromise;
     }
     this.lastGetAgentInfoPromise = new Promise((resolve, reject) => {
-      WalletOperation.requestAgentInfo(this.nesaClient, result?.account, this.modelName)
+      WalletOperation.requestAgentInfo(
+        this.nesaClient,
+        result?.account,
+        this.modelName
+      )
         .then((agentInfo: any) => {
           if (agentInfo && agentInfo?.inferenceAgent) {
             const selectAgent = agentInfo?.inferenceAgent;
             let agentWsUrl = selectAgent.url;
             let agentHeartbeatUrl = selectAgent.url;
             if (selectAgent.url?.endsWith("/")) {
-              agentWsUrl = agentWsUrl + 'chat';
-              agentHeartbeatUrl = agentHeartbeatUrl + 'heartbeat';
+              agentWsUrl = agentWsUrl + "chat";
+              agentHeartbeatUrl = agentHeartbeatUrl + "heartbeat";
             } else {
-              agentWsUrl = agentWsUrl + '/chat';
-              agentHeartbeatUrl = agentHeartbeatUrl + '/heartbeat';
+              agentWsUrl = agentWsUrl + "/chat";
+              agentHeartbeatUrl = agentHeartbeatUrl + "/heartbeat";
             }
             let firstInitHeartbeat = true;
-            this.chatProgressReadable?.push({
-              code: 303,
-              message: "Connecting to the validator",
-            });
+
+            if (!this.chatProgressReadable?.isClosed) {
+              this.chatProgressReadable?.push({
+                code: 303,
+                message: "Connecting to the validator",
+              });
+            }
             socket.init({
               ws_url: agentHeartbeatUrl,
               onopen: () => {
                 if (firstInitHeartbeat) {
                   this.agentUrl = agentWsUrl;
                   this.isRegisterSessioning = false;
-                  this.chatProgressReadable?.push({
-                    code: 304,
-                    message: "Waiting for query",
-                  });
+
+                  if (!this.chatProgressReadable?.isClosed) {
+                    this.chatProgressReadable?.push({
+                      code: 304,
+                      message: "Waiting for query",
+                    });
+                  }
                   if (!readableStream.isClosed) readableStream.push(null);
                   firstInitHeartbeat = false;
                   resolve(result);
@@ -460,19 +546,19 @@ class ChatClient {
                 if (!readableStream.isClosed) {
                   readableStream.push({
                     code: 319,
-                    message: 'Agent connection error: ' + selectAgent.url,
+                    message: "Agent connection error: " + selectAgent.url,
                   });
                   readableStream.push(null);
                 }
                 reject(new Error("Agent heartbeat packet connection failed"));
-              }
+              },
             });
           } else {
             this.isRegisterSessioning = false;
             if (!readableStream.isClosed) {
               readableStream.push({
                 code: 319,
-                message: 'Agent not found',
+                message: "Agent not found",
               });
               readableStream.push(null);
             }
@@ -485,7 +571,9 @@ class ChatClient {
           if (!readableStream.isClosed) {
             readableStream.push({
               code: 319,
-              message: 'Agent connection error: ' + (error?.message || error.toString()),
+              message:
+                "Agent connection error: " +
+                (error?.message || error.toString()),
             });
             readableStream.push(null);
           }
@@ -495,17 +583,22 @@ class ChatClient {
     return this.lastGetAgentInfoPromise;
   }
 
-  checkSignBroadcastResult(readableStream?: ReadableStreamWithState & { isClosed?: boolean }) {
+  checkSignBroadcastResult(
+    readableStream?: ReadableStreamWithState & { isClosed?: boolean }
+  ) {
     return new Promise((resolve, reject) => {
       if (!this.nesaClient) {
-        reject(new Error('Please wait for the requestSession registration result'));
+        reject(
+          new Error("Please wait for the requestSession registration result")
+        );
       } else {
-        this.nesaClient.broadcastRegisterSession()
+        this.nesaClient
+          .broadcastRegisterSession()
           .then((result: any) => {
             resolve(this.requestAgentInfo(result, readableStream));
           })
           .catch((error: any) => {
-            console.log('checkSignBroadcastResultError: ', error);
+            console.log("checkSignBroadcastResultError: ", error);
             if (!readableStream.isClosed) {
               readableStream.push({
                 code: 318,
@@ -522,7 +615,7 @@ class ChatClient {
   requestChatStatus() {
     return new Promise((resolve) => {
       const readableStream = new Readable({ objectMode: true });
-      readableStream._read = () => { };
+      readableStream._read = () => {};
       readableStream.push({
         code: 300,
         message: "Connecting to Nesa chain",
@@ -535,17 +628,27 @@ class ChatClient {
   requestSession() {
     return new Promise((resolve, reject) => {
       if (!this.checkChainInfo()) {
-        reject(new Error("Invalid chainInfo, you must provide rpc, rest, feeCurrencies, feeCurrencies"));
+        reject(
+          new Error(
+            "Invalid chainInfo, you must provide rpc, rest, feeCurrencies, feeCurrencies"
+          )
+        );
       } else if (!this.modelName) {
         reject(new Error("ModelName is null"));
       } else if (this.isRegisterSessioning) {
         reject(new Error("Registering session, please wait"));
-      } else if (!this.lockAmount || new BigNumber(this.lockAmount).isNaN() || new BigNumber(this.lockAmount).isLessThan(this.singlePaymentAmount)) {
-        reject(new Error("LockAmount invalid value or less than singlePaymentAmount"));
+      } else if (
+        !this.lockAmount ||
+        new BigNumber(this.lockAmount).isNaN() ||
+        new BigNumber(this.lockAmount).isLessThan(this.singlePaymentAmount)
+      ) {
+        reject(
+          new Error("LockAmount invalid value or less than singlePaymentAmount")
+        );
       } else {
         this.isEverRequestSession = true;
         const readableStream = new Readable({ objectMode: true });
-        readableStream._read = () => { };
+        readableStream._read = () => {};
         resolve(readableStream);
         this.initWallet()
           .then(() => {
@@ -556,29 +659,46 @@ class ChatClient {
                   .then((params: any) => {
                     if (params && params?.params) {
                       this.tokenPrice = params?.params?.tokenPrice?.low;
-                      if (new BigNumber(this.lockAmount).isLessThan(params?.params?.userMinimumLock?.amount)) {
+                      if (
+                        new BigNumber(this.lockAmount).isLessThan(
+                          params?.params?.userMinimumLock?.amount
+                        )
+                      ) {
                         if (!readableStream.isClosed) {
                           readableStream.push({
                             code: 311,
-                            message: "LockAmount cannot be less than " + params?.params?.userMinimumLock?.amount,
+                            message:
+                              "LockAmount cannot be less than " +
+                              params?.params?.userMinimumLock?.amount,
                           });
                         }
                       } else {
-                        WalletOperation.registerSession(nesaClient, this.modelName, this.lockAmount, params?.params?.userMinimumLock?.denom, this.chainInfo, this.offLinesigner)
+                        WalletOperation.registerSession(
+                          nesaClient,
+                          this.modelName,
+                          this.lockAmount,
+                          params?.params?.userMinimumLock?.denom,
+                          this.chainInfo,
+                          this.offLinesigner
+                        )
                           .then((result: any) => {
-                            console.log('registerSession-result: ', result);
+                            console.log("registerSession-result: ", result);
                             if (result?.transactionHash) {
-                              this.chatProgressReadable?.push({
-                                code: 302,
-                                message: "Choosing an inference validator",
-                              });
+                              if (!this.chatProgressReadable?.isClosed) {
+                                this.chatProgressReadable?.push({
+                                  code: 302,
+                                  message: "Choosing an inference validator",
+                                });
+                              }
                               if (!readableStream.isClosed) {
                                 readableStream.push({
                                   code: 200,
                                   message: result?.transactionHash,
                                 });
                               }
-                              this.checkSignBroadcastResult(readableStream).catch(() => { });
+                              this.checkSignBroadcastResult(
+                                readableStream
+                              ).catch(() => {});
                             } else {
                               this.isRegisterSessioning = false;
                               if (!readableStream.isClosed) {
@@ -593,7 +713,7 @@ class ChatClient {
                             if (!readableStream.isClosed) {
                               readableStream.push({
                                 code: 313,
-                                message: error?.message || error.toString()
+                                message: error?.message || error.toString(),
                               });
                             }
                             this.isRegisterSessioning = false;
@@ -616,7 +736,8 @@ class ChatClient {
                       });
                     }
                   });
-              }).catch((error: any) => {
+              })
+              .catch((error: any) => {
                 if (!readableStream.isClosed) {
                   readableStream.push({
                     code: 316,
@@ -624,7 +745,8 @@ class ChatClient {
                   });
                 }
               });
-          }).catch((error: any) => {
+          })
+          .catch((error: any) => {
             if (!readableStream.isClosed) {
               readableStream.push({
                 code: 317,
@@ -639,17 +761,21 @@ class ChatClient {
   requestChat(question: QuestionTypes) {
     return new Promise((resolve, reject) => {
       if (!question?.model) {
-        reject(new Error('Model is required'));
+        reject(new Error("Model is required"));
       } else if (this.isRegisterSessioning) {
         reject(new Error("Registering session, please wait"));
       } else if (!this.isEverRequestSession) {
-        reject(new Error("Please call requestSession first to complete Session registration"));
+        reject(
+          new Error(
+            "Please call requestSession first to complete Session registration"
+          )
+        );
       } else if (!this.agentUrl) {
         this.checkSignBroadcastResult()
           .then((result: any) => {
-            console.log('checkSignBroadcastResult-result: ', result);
+            console.log("checkSignBroadcastResult-result: ", result);
             const readableStream = new Readable({ objectMode: true });
-            readableStream._read = () => { };
+            readableStream._read = () => {};
             resolve(readableStream);
             if (this.isChatinging) {
               this.chatQueue.push({ readableStream, question });
@@ -662,7 +788,7 @@ class ChatClient {
           });
       } else {
         const readableStream = new Readable({ objectMode: true });
-        readableStream._read = () => { };
+        readableStream._read = () => {};
         resolve(readableStream);
         if (this.isChatinging) {
           this.chatQueue.push({ readableStream, question });
