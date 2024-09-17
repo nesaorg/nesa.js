@@ -276,18 +276,26 @@ class ChatClient {
     error: any,
     readableStream: ReadableStreamWithState & { isClosed?: boolean }
   ) {
-    if (this.chatProgressReadable && !this.chatProgressReadable.isClosed) {
-      this.chatProgressReadable.push({
-        code: 307,
-        message: "Task completed, wait for another query",
-      });
+    try {
+      if (this.chatProgressReadable && !this.chatProgressReadable.isClosed) {
+        this.chatProgressReadable.push({
+          code: 307,
+          message: "Task completed, wait for another query",
+        });
+      }
+    } catch (e) {
+      console.error(e);
     }
 
-    if (!readableStream.isClosed) {
-      readableStream.push({
-        code: 204,
-        message: error?.reason || "Error: Connection failed",
-      });
+    try {
+      if (!readableStream.isClosed) {
+        readableStream.push({
+          code: 204,
+          message: error?.reason || "Error: Connection failed",
+        });
+      }
+    } catch (e) {
+      console.error(e);
     }
 
     this.closeStream(readableStream);
@@ -543,12 +551,16 @@ class ChatClient {
                 }
               },
               onerror: () => {
-                if (!readableStream.isClosed) {
-                  readableStream.push({
-                    code: 319,
-                    message: "Agent connection error: " + selectAgent.url,
-                  });
-                  readableStream.push(null);
+                try {
+                  if (!readableStream.isClosed) {
+                    readableStream.push({
+                      code: 319,
+                      message: "Agent connection error: " + selectAgent.url,
+                    });
+                    readableStream.push(null);
+                  }
+                } catch (e) {
+                  console.error(e);
                 }
                 reject(new Error("Agent heartbeat packet connection failed"));
               },
