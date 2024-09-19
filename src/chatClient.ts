@@ -1,21 +1,21 @@
-import EncryptUtils from "./encryptUtils";
-import WalletOperation from "./walletOperation";
-import { Readable } from "stream-browserify";
-import { ChainInfo } from "@keplr-wallet/types";
+import EncryptUtils from './encryptUtils';
+import WalletOperation from './walletOperation';
+import { Readable } from 'stream-browserify';
+import { ChainInfo } from '@keplr-wallet/types';
 import {
   defaultChainInfo,
   defaultLockAmount,
   defaultSinglePaymentAmount,
   defaultLowBalance,
   sdkVersion,
-} from "./default.config";
-import { socket } from "./socket";
-import { BigNumber } from "bignumber.js";
+} from './default.config';
+import { socket } from './socket';
+import { BigNumber } from 'bignumber.js';
 import {
   CosmjsOfflineSigner,
   suggestChain,
-} from "@leapwallet/cosmos-snap-provider";
-import { DirectSecp256k1Wallet } from "@cosmjs/proto-signing";
+} from '@leapwallet/cosmos-snap-provider';
+import { DirectSecp256k1Wallet } from '@cosmjs/proto-signing';
 
 // this is ennoying, but stream-browserify doesn't have a type definition
 // node's stream package has a type definition, but it wasn't playing nicely, so not sure if it is compatible
@@ -56,8 +56,8 @@ class ChatClient {
   private totalSignedPayment = 0;
   private isChatinging = false;
   private isRegisterSessioning = false;
-  private agentUrl = "";
-  private assistantRoleName = "";
+  private agentUrl = '';
+  private assistantRoleName = '';
   private lastNesaClientPromise: Promise<any> | undefined;
   private lastUserMinimumLockPromise: Promise<any> | undefined;
   private lastGetAgentInfoPromise: Promise<any> | undefined;
@@ -74,17 +74,17 @@ class ChatClient {
   private tokenPrice: number;
 
   constructor(options: ConfigOptions) {
-    this.modelName = options?.modelName?.toLowerCase() || "";
+    this.modelName = options?.modelName?.toLowerCase() || '';
     this.chainInfo = options.chainInfo || defaultChainInfo;
     this.lockAmount = options.lockAmount || defaultLockAmount;
     this.singlePaymentAmount =
       options.singlePaymentAmount || defaultSinglePaymentAmount;
     this.lowBalance = options.lowBalance || defaultLowBalance;
-    this.lockAmountDenom = "";
-    this.walletName = options.walletName || "";
-    this.privateKey = options.privateKey || "";
+    this.lockAmountDenom = '';
+    this.walletName = options.walletName || '';
+    this.privateKey = options.privateKey || '';
     this.isEverRequestSession = false;
-    this.isBrowser = typeof window !== "undefined";
+    this.isBrowser = typeof window !== 'undefined';
     this.isBrowser && (window.nesaSdkVersion = sdkVersion);
     this.tokenPrice = 0;
     this.initWallet();
@@ -102,7 +102,7 @@ class ChatClient {
         }
         this.getNesaClient();
       } catch (error) {
-        console.error("initOfflineSigner-error: ", error);
+        console.error('initOfflineSigner-error: ', error);
         throw error;
       }
     })();
@@ -110,7 +110,7 @@ class ChatClient {
   }
 
   private async initBrowserWallet(): Promise<void> {
-    if (this.walletName === "npm:@leapwallet/metamask-cosmos-snap") {
+    if (this.walletName === 'npm:@leapwallet/metamask-cosmos-snap') {
       await suggestChain(this.chainInfo, { force: false });
       this.offLinesigner = new CosmjsOfflineSigner(this.chainInfo.chainId);
     } else if (window?.keplr) {
@@ -119,18 +119,18 @@ class ChatClient {
       this.offLinesigner = window.getOfflineSigner!(this.chainInfo.chainId);
     } else {
       throw new Error(
-        "No wallet installed, please install keplr or metamask wallet first"
+        'No wallet installed, please install keplr or metamask wallet first'
       );
     }
   }
 
   private async initNodeWallet(): Promise<void> {
     if (!this.privateKey) {
-      throw new Error("In the node environment, please provide the privateKey");
+      throw new Error('In the node environment, please provide the privateKey');
     }
     const wallet = await DirectSecp256k1Wallet.fromKey(
-      Buffer.from(this.privateKey, "hex"),
-      "nesa"
+      Buffer.from(this.privateKey, 'hex'),
+      'nesa'
     );
     this.offLinesigner = wallet;
   }
@@ -145,7 +145,7 @@ class ChatClient {
           resolve(client);
         })
         .catch((error) => {
-          console.error("initNesaClientError: ", error);
+          console.error('initNesaClientError: ', error);
           this.lastNesaClientPromise = undefined;
           reject(error);
         });
@@ -161,13 +161,13 @@ class ChatClient {
           if (!this.chatProgressReadable?.isClosed) {
             this.chatProgressReadable?.push({
               code: 301,
-              message: "Connected to Nesa chain",
+              message: 'Connected to Nesa chain',
             });
           }
           resolve(params);
         })
         .catch((error) => {
-          console.error("getChainParamsError: ", error);
+          console.error('getChainParamsError: ', error);
           this.lastUserMinimumLockPromise = undefined;
           reject(error);
         });
@@ -186,7 +186,7 @@ class ChatClient {
   }
 
   private getSignaturePayment() {
-    if (this.signaturePayment[this.totalSignedPayment]) return "";
+    if (this.signaturePayment[this.totalSignedPayment]) return '';
     const signaturePayment = EncryptUtils.signMessage(
       `${this.totalSignedPayment}${this.chainInfo.feeCurrencies[0].coinMinimalDenom}`,
       this.chatSeq,
@@ -247,13 +247,13 @@ class ChatClient {
     if (this.chatProgressReadable && !this.chatProgressReadable.isClosed) {
       this.chatProgressReadable.push({
         code: 307,
-        message: "Task completed, wait for another query",
+        message: 'Task completed, wait for another query',
       });
     }
 
     if (!wasClean && reason) {
-      console.log("WebSocket closed unexpectedly: ", reason);
-      if (!readableStream.isClosed) {
+      console.log('WebSocket closed unexpectedly: ', reason);
+      if (!readableStream?.isClosed) {
         readableStream.push({
           code: 205,
           message: reason,
@@ -280,7 +280,7 @@ class ChatClient {
       if (this.chatProgressReadable && !this.chatProgressReadable.isClosed) {
         this.chatProgressReadable.push({
           code: 307,
-          message: "Task completed, wait for another query",
+          message: 'Task completed, wait for another query',
         });
       }
     } catch (e) {
@@ -288,10 +288,10 @@ class ChatClient {
     }
 
     try {
-      if (!readableStream.isClosed) {
+      if (!readableStream?.isClosed) {
         readableStream.push({
           code: 204,
-          message: error?.reason || "Error: Connection failed",
+          message: error?.reason || 'Error: Connection failed',
         });
       }
     } catch (e) {
@@ -312,7 +312,7 @@ class ChatClient {
   private closeStream(
     readableStream: ReadableStreamWithState & { isClosed?: boolean }
   ) {
-    if (!readableStream.isClosed) {
+    if (!readableStream?.isClosed) {
       readableStream.push(null); // Signal the end of the stream
       readableStream.isClosed = true; // Mark the stream as closed
     }
@@ -331,11 +331,11 @@ class ChatClient {
       if (this.isBrowser) {
         ws = new WebSocket(this.agentUrl);
       } else {
-        const WebSocket = require("ws");
+        const WebSocket = require('ws');
         ws = new WebSocket(this.agentUrl);
       }
 
-      ws.addEventListener("open", () => {
+      ws.addEventListener('open', () => {
         if (ws.readyState === 1) {
           const questionStr = JSON.stringify({
             stream: true,
@@ -345,7 +345,7 @@ class ChatClient {
 
           if (question.messages && this.assistantRoleName) {
             question.messages = question.messages.map((item: any) => {
-              if (item.role === "assistant") {
+              if (item.role === 'assistant') {
                 item.role = this.assistantRoleName;
               }
               return item;
@@ -366,11 +366,11 @@ class ChatClient {
               })
             );
           } else {
-            if (!readableStream.isClosed) {
+            if (!readableStream?.isClosed) {
               readableStream.push({
                 code: 201,
                 message:
-                  "No signature found or the signature has expired, please sign again",
+                  'No signature found or the signature has expired, please sign again',
               });
               this.closeStream(readableStream);
             }
@@ -391,33 +391,33 @@ class ChatClient {
         }
 
         if (messageTimes === 0) {
-          if (messageJson === "ack") {
+          if (messageJson === 'ack') {
             this.chatProgressReadable?.push({
               code: 305,
-              message: "Conducting inference",
+              message: 'Conducting inference',
             });
           } else {
             ws.close();
-            if (!readableStream.isClosed) {
+            if (!readableStream?.isClosed) {
               readableStream.push({
                 code: 202,
-                message: "Illegal link",
+                message: 'Illegal link',
               });
               this.closeStream(readableStream);
             }
             this.isChatinging = false;
           }
           messageTimes += 1;
-        } else if (messageJson?.content?.startsWith("[DONE]")) {
+        } else if (messageJson?.content?.startsWith('[DONE]')) {
           ws.close();
-          if (!readableStream.isClosed) {
+          if (!readableStream?.isClosed) {
             readableStream.push({
               code: 203,
-              message: messageJson?.content?.split("[DONE]")[1],
+              message: messageJson?.content?.split('[DONE]')[1],
             });
             this.chatProgressReadable?.push({
               code: 307,
-              message: "Task completed, wait for another query",
+              message: 'Task completed, wait for another query',
             });
             this.closeStream(readableStream);
           }
@@ -427,7 +427,7 @@ class ChatClient {
             if (!this.chatProgressReadable?.isClosed) {
               this.chatProgressReadable?.push({
                 code: 306,
-                message: "Receiving responses",
+                message: 'Receiving responses',
               });
             }
             messageTimes += 1;
@@ -437,11 +437,11 @@ class ChatClient {
             amount: this.totalSignedPayment,
             denom: this.chainInfo.feeCurrencies[0].coinMinimalDenom,
           };
-          if (!readableStream.isClosed) {
+          if (!readableStream?.isClosed) {
             readableStream.push({
               code: 200,
               message: messageJson?.content,
-              session_id: messageJson?.session_id || "",
+              session_id: messageJson?.session_id || '',
               total_payment,
             });
           }
@@ -449,7 +449,7 @@ class ChatClient {
           if (
             new BigNumber(this.totalUsedPayment).isGreaterThan(this.lockAmount)
           ) {
-            if (!readableStream.isClosed) {
+            if (!readableStream?.isClosed) {
               readableStream.push({
                 code: 205,
                 message: '{"code":1015,"msg":"balance insufficient"}',
@@ -472,18 +472,27 @@ class ChatClient {
         this.handleWsClose(event, readableStream);
       ws.onerror = (error: any) => this.handleWsError(error, readableStream);
     } catch (error: any) {
-      if (!this.chatProgressReadable?.isClosed) {
-        this.chatProgressReadable?.push({
-          code: 307,
-          message: "Task completed, wait for another query",
-        });
+      try {
+        if (!this.chatProgressReadable?.isClosed) {
+          this.chatProgressReadable?.push({
+            code: 307,
+            message: 'Task completed, wait for another query',
+          });
+        }
+      } catch (e) {
+        console.error(e);
       }
-      if (!readableStream.isClosed) {
-        readableStream.push({
-          code: 207,
-          message: error.message || "Error: Connection failed",
-        });
-        this.closeStream(readableStream);
+
+      try {
+        if (!readableStream?.isClosed) {
+          readableStream.push({
+            code: 207,
+            message: error.message || 'Error: Connection failed',
+          });
+          this.closeStream(readableStream);
+        }
+      } catch (e) {
+        console.error(e);
       }
       this.isChatinging = false;
       if (this.chatQueue.length > 0) {
@@ -517,19 +526,19 @@ class ChatClient {
             const selectAgent = agentInfo?.inferenceAgent;
             let agentWsUrl = selectAgent.url;
             let agentHeartbeatUrl = selectAgent.url;
-            if (selectAgent.url?.endsWith("/")) {
-              agentWsUrl = agentWsUrl + "chat";
-              agentHeartbeatUrl = agentHeartbeatUrl + "heartbeat";
+            if (selectAgent.url?.endsWith('/')) {
+              agentWsUrl = agentWsUrl + 'chat';
+              agentHeartbeatUrl = agentHeartbeatUrl + 'heartbeat';
             } else {
-              agentWsUrl = agentWsUrl + "/chat";
-              agentHeartbeatUrl = agentHeartbeatUrl + "/heartbeat";
+              agentWsUrl = agentWsUrl + '/chat';
+              agentHeartbeatUrl = agentHeartbeatUrl + '/heartbeat';
             }
             let firstInitHeartbeat = true;
 
             if (!this.chatProgressReadable?.isClosed) {
               this.chatProgressReadable?.push({
                 code: 303,
-                message: "Connecting to the validator",
+                message: 'Connecting to the validator',
               });
             }
             socket.init({
@@ -542,52 +551,57 @@ class ChatClient {
                   if (!this.chatProgressReadable?.isClosed) {
                     this.chatProgressReadable?.push({
                       code: 304,
-                      message: "Waiting for query",
+                      message: 'Waiting for query',
                     });
                   }
-                  if (!readableStream.isClosed) readableStream.push(null);
+                  if (!readableStream?.isClosed) readableStream.push(null);
                   firstInitHeartbeat = false;
                   resolve(result);
                 }
               },
               onerror: () => {
                 try {
-                  if (!readableStream.isClosed) {
+                  if (!readableStream?.isClosed) {
                     readableStream.push({
                       code: 319,
-                      message: "Agent connection error: " + selectAgent.url,
+                      message: 'Agent connection error: ' + selectAgent.url,
                     });
                     readableStream.push(null);
                   }
                 } catch (e) {
                   console.error(e);
                 }
-                reject(new Error("Agent heartbeat packet connection failed"));
+                reject(new Error('Agent heartbeat packet connection failed'));
               },
             });
           } else {
             this.isRegisterSessioning = false;
-            if (!readableStream.isClosed) {
+            if (!readableStream?.isClosed) {
               readableStream.push({
                 code: 319,
-                message: "Agent not found",
+                message: 'Agent not found',
               });
               readableStream.push(null);
             }
-            reject(new Error("No agent found"));
+            reject(new Error('No agent found'));
           }
         })
         .catch((error) => {
-          console.log("requestAgentInfoError: ", error);
+          console.log('requestAgentInfoError: ', error);
           this.lastGetAgentInfoPromise = undefined;
-          if (!readableStream.isClosed) {
-            readableStream.push({
-              code: 319,
-              message:
-                "Agent connection error: " +
-                (error?.message || error.toString()),
-            });
-            readableStream.push(null);
+
+          try {
+            if (!readableStream?.isClosed) {
+              readableStream.push({
+                code: 319,
+                message:
+                  'Agent connection error: ' +
+                  (error?.message || error.toString()),
+              });
+              readableStream.push(null);
+            }
+          } catch (e) {
+            console.error(e);
           }
           reject(error);
         });
@@ -601,7 +615,7 @@ class ChatClient {
     return new Promise((resolve, reject) => {
       if (!this.nesaClient) {
         reject(
-          new Error("Please wait for the requestSession registration result")
+          new Error('Please wait for the requestSession registration result')
         );
       } else {
         this.nesaClient
@@ -610,13 +624,17 @@ class ChatClient {
             resolve(this.requestAgentInfo(result, readableStream));
           })
           .catch((error: any) => {
-            console.log("checkSignBroadcastResultError: ", error);
-            if (!readableStream.isClosed) {
-              readableStream.push({
-                code: 318,
-                message: error?.message,
-              });
-              readableStream.push(null);
+            console.log('checkSignBroadcastResultError: ', error);
+            try {
+              if (!readableStream?.isClosed) {
+                readableStream.push({
+                  code: 318,
+                  message: error?.message,
+                });
+                readableStream.push(null);
+              }
+            } catch (e) {
+              console.error(e);
             }
             reject(error);
           });
@@ -630,7 +648,7 @@ class ChatClient {
       readableStream._read = () => {};
       readableStream.push({
         code: 300,
-        message: "Connecting to Nesa chain",
+        message: 'Connecting to Nesa chain',
       });
       this.chatProgressReadable = readableStream;
       resolve(readableStream);
@@ -642,20 +660,20 @@ class ChatClient {
       if (!this.checkChainInfo()) {
         reject(
           new Error(
-            "Invalid chainInfo, you must provide rpc, rest, feeCurrencies, feeCurrencies"
+            'Invalid chainInfo, you must provide rpc, rest, feeCurrencies, feeCurrencies'
           )
         );
       } else if (!this.modelName) {
-        reject(new Error("ModelName is null"));
+        reject(new Error('ModelName is null'));
       } else if (this.isRegisterSessioning) {
-        reject(new Error("Registering session, please wait"));
+        reject(new Error('Registering session, please wait'));
       } else if (
         !this.lockAmount ||
         new BigNumber(this.lockAmount).isNaN() ||
         new BigNumber(this.lockAmount).isLessThan(this.singlePaymentAmount)
       ) {
         reject(
-          new Error("LockAmount invalid value or less than singlePaymentAmount")
+          new Error('LockAmount invalid value or less than singlePaymentAmount')
         );
       } else {
         this.isEverRequestSession = true;
@@ -676,11 +694,11 @@ class ChatClient {
                           params?.params?.userMinimumLock?.amount
                         )
                       ) {
-                        if (!readableStream.isClosed) {
+                        if (!readableStream?.isClosed) {
                           readableStream.push({
                             code: 311,
                             message:
-                              "LockAmount cannot be less than " +
+                              'LockAmount cannot be less than ' +
                               params?.params?.userMinimumLock?.amount,
                           });
                         }
@@ -694,15 +712,15 @@ class ChatClient {
                           this.offLinesigner
                         )
                           .then((result: any) => {
-                            console.log("registerSession-result: ", result);
+                            console.log('registerSession-result: ', result);
                             if (result?.transactionHash) {
                               if (!this.chatProgressReadable?.isClosed) {
                                 this.chatProgressReadable?.push({
                                   code: 302,
-                                  message: "Choosing an inference validator",
+                                  message: 'Choosing an inference validator',
                                 });
                               }
-                              if (!readableStream.isClosed) {
+                              if (!readableStream?.isClosed) {
                                 readableStream.push({
                                   code: 200,
                                   message: result?.transactionHash,
@@ -713,7 +731,7 @@ class ChatClient {
                               ).catch(() => {});
                             } else {
                               this.isRegisterSessioning = false;
-                              if (!readableStream.isClosed) {
+                              if (!readableStream?.isClosed) {
                                 readableStream.push({
                                   code: 312,
                                   message: JSON.stringify(result),
@@ -722,17 +740,21 @@ class ChatClient {
                             }
                           })
                           .catch((error) => {
-                            if (!readableStream.isClosed) {
-                              readableStream.push({
-                                code: 313,
-                                message: error?.message || error.toString(),
-                              });
-                            }
+                            try {
+                              if (!readableStream?.isClosed) {
+                                readableStream.push({
+                                  code: 313,
+                                  message: error?.message || error.toString(),
+                                });
+                              }
+                            } catch (e) {
+                              console.error(e);
+                            } 
                             this.isRegisterSessioning = false;
                           });
                       }
                     } else {
-                      if (!readableStream.isClosed) {
+                      if (!readableStream?.isClosed) {
                         readableStream.push({
                           code: 314,
                           message: JSON.stringify(params),
@@ -741,29 +763,41 @@ class ChatClient {
                     }
                   })
                   .catch((error: any) => {
-                    if (!readableStream.isClosed) {
-                      readableStream.push({
-                        code: 315,
-                        message: error?.message || error.toString(),
-                      });
+                    try {
+                      if (!readableStream?.isClosed) {
+                        readableStream.push({
+                          code: 315,
+                          message: error?.message || error.toString(),
+                        });
+                      }
+                    } catch (e) {
+                      console.error(e);
                     }
                   });
               })
               .catch((error: any) => {
-                if (!readableStream.isClosed) {
-                  readableStream.push({
-                    code: 316,
-                    message: error?.message || error.toString(),
-                  });
+                try {
+                  if (!readableStream?.isClosed) {
+                    readableStream.push({
+                      code: 316,
+                      message: error?.message || error.toString(),
+                    });
+                  }
+                } catch (e) {
+                  console.error(e);
                 }
               });
           })
           .catch((error: any) => {
-            if (!readableStream.isClosed) {
-              readableStream.push({
-                code: 317,
-                message: error?.message || error.toString(),
-              });
+            try {
+              if (!readableStream?.isClosed) {
+                readableStream.push({
+                  code: 317,
+                  message: error?.message || error.toString(),
+                });
+              }
+            } catch (e) {
+              console.error(e);
             }
           });
       }
@@ -773,19 +807,19 @@ class ChatClient {
   requestChat(question: QuestionTypes) {
     return new Promise((resolve, reject) => {
       if (!question?.model) {
-        reject(new Error("Model is required"));
+        reject(new Error('Model is required'));
       } else if (this.isRegisterSessioning) {
-        reject(new Error("Registering session, please wait"));
+        reject(new Error('Registering session, please wait'));
       } else if (!this.isEverRequestSession) {
         reject(
           new Error(
-            "Please call requestSession first to complete Session registration"
+            'Please call requestSession first to complete Session registration'
           )
         );
       } else if (!this.agentUrl) {
         this.checkSignBroadcastResult()
           .then((result: any) => {
-            console.log("checkSignBroadcastResult-result: ", result);
+            console.log('checkSignBroadcastResult-result: ', result);
             const readableStream = new Readable({ objectMode: true });
             readableStream._read = () => {};
             resolve(readableStream);

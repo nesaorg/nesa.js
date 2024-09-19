@@ -1,4 +1,4 @@
-import { ChainInfo } from "@keplr-wallet/types";
+import { ChainInfo } from '@keplr-wallet/types';
 type ReadableStreamWithState = any & {
     isClosed?: boolean;
 };
