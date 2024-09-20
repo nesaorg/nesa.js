@@ -1,11 +1,10 @@
 const { exit } = require('process')
-const { ChatClient } = require('nesa.js')
+const ChatClient = require('../dist/chatClient').default
 const readline = require("node:readline");
 
 const address = 'nesa143gwwdtxaxspv5rqesyxnza8sxd9gjkyvapc7f'
 const privateKey = 'c2769207c112c66a980dc50b74775e7a3cdb5e37a79884ebed2ae50417a7e237'
-const requestSessionModel = 'meta-llama/Meta-Llama-3-70B'
-const requestChatModel = 'meta-llama/Meta-Llama-3-70B'
+const modelName = 'Orenguteng/Llama-3-8B-Lexi-Uncensored'
 
 const nesaTestChain = {
     chainId: 'nesa-testnet-3',
@@ -68,67 +67,73 @@ const nesaTestChain = {
     },
 }
 
-const ChatClientUtils = new ChatClient({
-    chainInfo: nesaTestChain,   //  chain info
-    privateKey: privateKey,     //  private key
-    modelName: requestSessionModel, // model name
-})
-const readlineClient = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-});
-const requestSession = () => {
-    ChatClientUtils.requestSession()
+const requestSession = (chatClient) => {
+    chatClient.requestSession()
         .then((dataStream) => {
-            dataStream.on("data", (msg) => {
-                console.warn("PROGRESS: ", msg);
-                if (msg?.code === 304) {
-                    readlineClient.question("Please input question: \n", (question) => {
-                        console.log(`You question is: ${question}`);
-                        requestChat(question)
-                    });
-                }
-            });
-            dataStream.on("end", () => {
-                // exit()
-            });
+            dataStream.on("data", msg => { });
+            dataStream.on("end", () => { });
         })
         .catch((error) => {
-            console.log('error: ', error)
-        })
+            console.error('requestSession error: ', error);
+        });
 }
 
-const requestChat = (question) => {
+const requestChat = (chatClient, question) => {
     const messageData = {
-        model: requestChatModel,
+        model: modelName,
         messages: [{ role: "user", content: question }],
         stream: true,
+        // To be included in production builds, from 'bson'/'mongodb' package
+        // session_id: {
+        //     session_id: new ObjectId(),
+        //     user_id: new ObjectId()
+        // }
     };
-    ChatClientUtils.requestChat(messageData)
+    chatClient.requestChat(messageData)
         .then((dataStream) => {
             let answer = ''
             dataStream.on("data", (msg) => {
                 if (msg?.code === 200) {
+                    console.info(`${new Date().toLocaleTimeString(undefined, { timeStyle: 'medium'})}: ${msg?.message}`);
                     answer = answer + msg?.message
-                    console.log('Answer: ', answer)
-                }
-                if (msg?.code === 307) {
-                    console.log(msg)
-                    readlineClient.question("Please input question again: \n", (question) => {
-                        console.log(`You question is: ${question}`);
-                        requestChat(question)
-                    });
                 }
             });
             dataStream.on("end", () => {
-                // console.log("Stream ended");
-                // exit()
+                console.log('Answer: ', answer);
+                exit();
             });
         })
         .catch((error) => {
-            console.log('error: ', error)
-            exit()
-        })
+            console.error('requestChat error: ', error)
+            exit();
+        });
 }
 
-requestSession()
+const main = async () => {
+    const chatClient = new ChatClient({
+        chainInfo: nesaTestChain,   //  chain info
+        privateKey: privateKey,     //  private key
+        modelName: modelName, // model name
+    });
+    const readlineClient = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+    });
+
+    const statusStream = await chatClient.requestChatStatus();
+    statusStream.on('data', msg => {
+        if (msg?.code === 304) {
+            readlineClient.question("Please input question: \n", (question) => {
+                console.log(`Asking: ${question}`);
+                requestChat(chatClient, question)
+            });
+        }
+    });
+    statusStream.on('error', error => {
+        console.error('statusStream error: ', error);
+    });
+
+    requestSession(chatClient);
+}
+
+main().catch(e => { console.error(e); process.exit(1) });
