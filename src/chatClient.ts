@@ -253,7 +253,7 @@ class ChatClient {
 
     if (!wasClean && reason) {
       console.log("WebSocket closed unexpectedly: ", reason);
-      if (!readableStream.isClosed) {
+      if (!readableStream?.isClosed) {
         readableStream.push({
           code: 205,
           message: reason,
@@ -276,18 +276,27 @@ class ChatClient {
     error: any,
     readableStream: ReadableStreamWithState & { isClosed?: boolean }
   ) {
-    if (this.chatProgressReadable && !this.chatProgressReadable.isClosed) {
-      this.chatProgressReadable.push({
-        code: 307,
-        message: "Task completed, wait for another query",
-      });
+    try {
+      if (this.chatProgressReadable && !this.chatProgressReadable.isClosed) {
+        this.chatProgressReadable.push({
+          code: 307,
+          message: "Task completed, wait for another query",
+        });
+      }
+    } catch (e) {
+      console.error(e);
     }
 
-    if (!readableStream.isClosed) {
-      readableStream.push({
-        code: 204,
-        message: error?.reason || "Error: Connection failed",
-      });
+
+    try {
+      if (!readableStream?.isClosed) {
+        readableStream.push({
+          code: 204,
+          message: error?.reason || "Error: Connection failed",
+        });
+      }
+    } catch (e) {
+      console.error(e);
     }
 
     this.closeStream(readableStream);
@@ -304,7 +313,7 @@ class ChatClient {
   private closeStream(
     readableStream: ReadableStreamWithState & { isClosed?: boolean }
   ) {
-    if (!readableStream.isClosed) {
+    if (readableStream && !readableStream?.isClosed) {
       readableStream.push(null); // Signal the end of the stream
       readableStream.isClosed = true; // Mark the stream as closed
     }
@@ -358,7 +367,7 @@ class ChatClient {
               })
             );
           } else {
-            if (!readableStream.isClosed) {
+            if (!readableStream?.isClosed) {
               readableStream.push({
                 code: 201,
                 message:
@@ -390,7 +399,7 @@ class ChatClient {
             });
           } else {
             ws.close();
-            if (!readableStream.isClosed) {
+            if (!readableStream?.isClosed) {
               readableStream.push({
                 code: 202,
                 message: "Illegal link",
@@ -402,7 +411,7 @@ class ChatClient {
           messageTimes += 1;
         } else if (messageJson?.content?.startsWith("[DONE]")) {
           ws.close();
-          if (!readableStream.isClosed) {
+          if (!readableStream?.isClosed) {
             readableStream.push({
               code: 203,
               message: messageJson?.content?.split("[DONE]")[1],
@@ -429,7 +438,7 @@ class ChatClient {
             amount: this.totalSignedPayment,
             denom: this.chainInfo.feeCurrencies[0].coinMinimalDenom,
           };
-          if (!readableStream.isClosed) {
+          if (!readableStream?.isClosed) {
             readableStream.push({
               code: 200,
               message: messageJson?.content,
@@ -441,7 +450,7 @@ class ChatClient {
           if (
             new BigNumber(this.totalUsedPayment).isGreaterThan(this.lockAmount)
           ) {
-            if (!readableStream.isClosed) {
+            if (!readableStream?.isClosed) {
               readableStream.push({
                 code: 205,
                 message: '{"code":1015,"msg":"balance insufficient"}',
@@ -470,7 +479,7 @@ class ChatClient {
           message: "Task completed, wait for another query",
         });
       }
-      if (!readableStream.isClosed) {
+      if (!readableStream?.isClosed) {
         readableStream.push({
           code: 207,
           message: error.message || "Error: Connection failed",
@@ -537,13 +546,13 @@ class ChatClient {
                       message: "Waiting for query",
                     });
                   }
-                  if (!readableStream.isClosed) readableStream.push(null);
+                  if (!readableStream?.isClosed) readableStream.push(null);
                   firstInitHeartbeat = false;
                   resolve(result);
                 }
               },
               onerror: () => {
-                if (!readableStream.isClosed) {
+                if (!readableStream?.isClosed) {
                   readableStream.push({
                     code: 319,
                     message: "Agent connection error: " + selectAgent.url,
@@ -555,7 +564,7 @@ class ChatClient {
             });
           } else {
             this.isRegisterSessioning = false;
-            if (!readableStream.isClosed) {
+            if (!readableStream?.isClosed) {
               readableStream.push({
                 code: 319,
                 message: "Agent not found",
@@ -568,14 +577,18 @@ class ChatClient {
         .catch((error) => {
           console.log("requestAgentInfoError: ", error);
           this.lastGetAgentInfoPromise = undefined;
-          if (!readableStream.isClosed) {
-            readableStream.push({
-              code: 319,
-              message:
-                "Agent connection error: " +
-                (error?.message || error.toString()),
-            });
-            readableStream.push(null);
+          try {
+            if (!readableStream?.isClosed) {
+              readableStream?.push({
+                code: 319,
+                message:
+                  "Agent connection error: " + error?.message ||
+                  error.toString(),
+              });
+              readableStream?.push(null);
+            }
+          } catch (e) {
+            console.error("request agent error", e);
           }
           reject(error);
         });
@@ -599,13 +612,19 @@ class ChatClient {
           })
           .catch((error: any) => {
             console.log("checkSignBroadcastResultError: ", error);
-            if (!readableStream.isClosed) {
-              readableStream.push({
-                code: 318,
-                message: error?.message,
-              });
-              readableStream.push(null);
+
+            try {
+              if (!readableStream?.isClosed) {
+                readableStream.push({
+                  code: 318,
+                  message: error?.message,
+                });
+                readableStream.push(null);
+              }
+            } catch (e) {
+              console.error(e)
             }
+
             reject(error);
           });
       }
@@ -664,7 +683,7 @@ class ChatClient {
                           params?.params?.userMinimumLock?.amount
                         )
                       ) {
-                        if (!readableStream.isClosed) {
+                        if (!readableStream?.isClosed) {
                           readableStream.push({
                             code: 311,
                             message:
@@ -690,7 +709,7 @@ class ChatClient {
                                   message: "Choosing an inference validator",
                                 });
                               }
-                              if (!readableStream.isClosed) {
+                              if (!readableStream?.isClosed) {
                                 readableStream.push({
                                   code: 200,
                                   message: result?.transactionHash,
@@ -701,7 +720,7 @@ class ChatClient {
                               ).catch(() => {});
                             } else {
                               this.isRegisterSessioning = false;
-                              if (!readableStream.isClosed) {
+                              if (!readableStream?.isClosed) {
                                 readableStream.push({
                                   code: 312,
                                   message: JSON.stringify(result),
@@ -710,17 +729,21 @@ class ChatClient {
                             }
                           })
                           .catch((error) => {
-                            if (!readableStream.isClosed) {
-                              readableStream.push({
-                                code: 313,
-                                message: error?.message || error.toString(),
-                              });
+                            try {
+                              if (!readableStream?.isClosed) {
+                                readableStream.push({
+                                  code: 313,
+                                  message: error?.message || error.toString(),
+                                });
+                              }
+                            } catch (e) {
+                              console.error(e);
                             }
                             this.isRegisterSessioning = false;
                           });
                       }
                     } else {
-                      if (!readableStream.isClosed) {
+                      if (!readableStream?.isClosed) {
                         readableStream.push({
                           code: 314,
                           message: JSON.stringify(params),
@@ -729,29 +752,41 @@ class ChatClient {
                     }
                   })
                   .catch((error: any) => {
-                    if (!readableStream.isClosed) {
-                      readableStream.push({
-                        code: 315,
-                        message: error?.message || error.toString(),
-                      });
+                    try {
+                      if (!readableStream?.isClosed) {
+                        readableStream.push({
+                          code: 315,
+                          message: error?.message || error.toString(),
+                        });
+                      }
+                    } catch (e) {
+                      console.error(e);
                     }
                   });
               })
               .catch((error: any) => {
-                if (!readableStream.isClosed) {
-                  readableStream.push({
-                    code: 316,
-                    message: error?.message || error.toString(),
-                  });
+                try {
+                  if (!readableStream?.isClosed) {
+                    readableStream.push({
+                      code: 316,
+                      message: error?.message || error.toString(),
+                    });
+                  }
+                } catch (e) {
+                  console.error(e);
                 }
               });
           })
           .catch((error: any) => {
-            if (!readableStream.isClosed) {
-              readableStream.push({
-                code: 317,
-                message: error?.message || error.toString(),
-              });
+            try {
+              if (!readableStream?.isClosed) {
+                readableStream.push({
+                  code: 317,
+                  message: error?.message || error.toString(),
+                });
+              }
+            } catch (e) {
+              console.error(e);
             }
           });
       }
